@@ -1,0 +1,44 @@
+{
+	"name": "server",
+	"version": "1.0.0",
+	"description": "Express server for React + Express app",
+	"main": "index.js",
+	"scripts": {
+		"start": "node index.js",
+		"dev": "nodemon index.js",
+		"seed": "node seedData.js",
+		"seed-blog": "node seedBlogData.js",
+		"seed-all": "node seedAll.js",
+		"seed-dummy": "node seedDummyData.js",
+		"clear-dummy-products": "node clearDummyProducts.js",
+		"check-data": "node checkData.js"
+	},
+	"dependencies": {
+		"bcryptjs": "^3.0.2",
+		"cors": "^2.8.5",
+		"dotenv": "^16.3.1",
+		"express": "^4.18.2",
+		"express-session": "^1.18.2",
+		"helmet": "^7.1.0",
+		"jsonwebtoken": "^9.0.2",
+		"mongodb": "^6.20.0",
+		"mongoose": "^8.18.1",
+		"morgan": "^1.10.0",
+		"multer": "^2.0.2",
+		"nodemailer": "^7.0.6",
+		"passport": "^0.7.0",
+		"passport-google-oauth20": "^2.0.0",
+		"socket.io": "^4.8.1",
+		"socket.io-client": "^4.8.1"
+	},
+	"devDependencies": {
+		"nodemon": "^3.0.2"
+	},
+	"keywords": [
+		"express",
+		"api",
+		"backend"
+	],
+	"author": "",
+	"license": "MIT"
+}

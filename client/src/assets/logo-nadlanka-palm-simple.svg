@@ -1,0 +1,42 @@
+<svg width="200" height="60" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="palmSimpleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Icon: Simple Palm with Product Icons -->
+  <g transform="translate(8, 12)">
+    <!-- Simplified palm outline -->
+    <path d="M18 4 Q10 12 6 22 Q8 28 14 30 Q20 28 22 22 Q18 12 18 4" 
+          fill="none" stroke="url(#palmSimpleGradient)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Product icons on palm (representing ads/products) -->
+    <!-- Phone icon -->
+    <rect x="10" y="10" width="4" height="6" rx="0.5" fill="url(#palmSimpleGradient)"/>
+    <circle cx="12" cy="12.5" r="0.5" fill="white"/>
+    
+    <!-- Car icon -->
+    <rect x="16" y="12" width="5" height="3" rx="0.5" fill="url(#palmSimpleGradient)"/>
+    <circle cx="17.5" cy="14.5" r="0.8" fill="white"/>
+    <circle cx="19.5" cy="14.5" r="0.8" fill="white"/>
+    
+    <!-- House icon -->
+    <path d="M23 11 L25 9 L27 11 L27 14 L23 14 Z" fill="url(#palmSimpleGradient)"/>
+    <rect x="24.5" y="11.5" width="1" height="1.5" fill="white"/>
+  </g>
+  
+  <!-- Text: NaDlanka -->
+  <text x="42" y="38" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif" 
+        font-size="28" font-weight="700" fill="#2c3e50">
+    NaDlanka
+  </text>
+  
+  <!-- Subtitle: Marketplace -->
+  <text x="42" y="48" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif" 
+        font-size="11" font-weight="500" fill="#10b981" opacity="0.8">
+    MARKETPLACE
+  </text>
+</svg>
+

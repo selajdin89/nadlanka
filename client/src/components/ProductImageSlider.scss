@@ -1,0 +1,149 @@
+.product-image-slider {
+	width: 100%;
+	height: 200px;
+	position: relative;
+	overflow: hidden;
+	background: #f8f9fa;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transition: opacity 0.3s ease;
+	}
+
+	.placeholder-image {
+		color: #9aa0a6;
+		font-size: 0.9rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		height: 100%;
+	}
+
+	.slider-arrow {
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		background: rgba(0, 0, 0, 0.5);
+		border: none;
+		color: white;
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		opacity: 0;
+		z-index: 2;
+
+		&:hover {
+			background: rgba(0, 0, 0, 0.7);
+			transform: translateY(-50%) scale(1.1);
+		}
+
+		&:active {
+			transform: translateY(-50%) scale(0.95);
+		}
+	}
+
+	.slider-arrow-left {
+		left: 8px;
+	}
+
+	.slider-arrow-right {
+		right: 8px;
+	}
+
+	.slider-dots {
+		position: absolute;
+		bottom: 8px;
+		left: 50%;
+		transform: translateX(-50%);
+		display: flex;
+		gap: 4px;
+		opacity: 0;
+		transition: opacity 0.2s ease;
+		z-index: 2;
+	}
+
+	.slider-dot {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		border: none;
+		background: rgba(255, 255, 255, 0.5);
+		cursor: pointer;
+		transition: all 0.2s ease;
+
+		&.active {
+			background: white;
+			transform: scale(1.2);
+		}
+
+		&:hover {
+			background: rgba(255, 255, 255, 0.8);
+			transform: scale(1.1);
+		}
+	}
+
+	// Show arrows and dots on hover
+	&:hover {
+		.slider-arrow,
+		.slider-dots {
+			opacity: 1;
+		}
+	}
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+	.product-image-slider {
+		.slider-arrow {
+			width: 28px;
+			height: 28px;
+			opacity: 0.7; // Always visible on mobile for better UX
+		}
+
+		.slider-dots {
+			opacity: 0.7; // Always visible on mobile
+		}
+
+		.slider-dot {
+			width: 5px;
+			height: 5px;
+		}
+	}
+}
+
+@media (max-width: 480px) {
+	.product-image-slider {
+		.slider-arrow {
+			width: 24px;
+			height: 24px;
+		}
+
+		.slider-arrow-left {
+			left: 4px;
+		}
+
+		.slider-arrow-right {
+			right: 4px;
+		}
+
+		.slider-dots {
+			bottom: 4px;
+		}
+
+		.slider-dot {
+			width: 4px;
+			height: 4px;
+		}
+	}
+}

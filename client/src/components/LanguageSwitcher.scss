@@ -1,0 +1,143 @@
+// Language Switcher Styles
+@import "../styles/variables";
+
+.language-switcher {
+	position: relative;
+	z-index: 1001;
+}
+
+.language-button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: transparent;
+	border: none;
+	border-radius: 50%;
+	padding: 0.5rem;
+	color: #5f6368;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	width: 36px;
+	height: 36px;
+
+	&:hover {
+		background: rgba(16, 185, 129, 0.08);
+		color: $accent-color;
+		transform: scale(1.05);
+	}
+
+	&:active {
+		transform: scale(0.95);
+	}
+
+	&:focus {
+		outline: none;
+	}
+}
+
+.language-flag {
+	font-size: 1.2rem;
+	line-height: 1;
+}
+
+.world-icon {
+	color: inherit;
+	transition: all 0.2s ease;
+}
+
+.language-code {
+	font-weight: inherit;
+	letter-spacing: inherit;
+	font-size: inherit;
+}
+
+.language-dropdown {
+	position: absolute;
+	top: 100%;
+	right: 0;
+	margin-top: 0.5rem;
+	background: #ffffff;
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	border: 1px solid #e5e7eb;
+	overflow: hidden;
+	width: 50px;
+	min-width: 50px;
+	z-index: 1002;
+	animation: slideDown 0.2s ease-out;
+
+	@keyframes slideDown {
+		from {
+			opacity: 0;
+			transform: translateY(-10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+}
+
+.language-option {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	padding: 0.5rem;
+	background: none;
+	border: none;
+	color: #6b7280;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-align: center;
+	letter-spacing: 0.5px;
+
+	&:hover {
+		background: #f9fafb;
+		color: #374151;
+	}
+
+	&.active {
+		background: #f0fdf4;
+		color: $accent-color;
+		font-weight: 700;
+	}
+
+	&:first-child {
+		border-radius: 8px 8px 0 0;
+	}
+
+	&:last-child {
+		border-radius: 0 0 8px 8px;
+	}
+
+	&:only-child {
+		border-radius: 8px;
+	}
+}
+
+// Mobile responsive
+@media (max-width: 768px) {
+	.language-button {
+		width: 32px;
+		height: 32px;
+		padding: 0.4rem;
+
+		.world-icon {
+			width: 18px;
+			height: 18px;
+		}
+	}
+
+	.language-dropdown {
+		width: 45px;
+		min-width: 45px;
+	}
+
+	.language-option {
+		padding: 0.45rem;
+		font-size: 0.7rem;
+	}
+}
