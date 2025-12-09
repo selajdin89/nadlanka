@@ -42,29 +42,11 @@ const io = new Server(server, {
 	},
 });
 
-// Session store - will be initialized after MongoDB connects
-let sessionStoreInstance = null;
-
 // MongoDB Connection
 const connectDB = async () => {
 	try {
 		const conn = await mongoose.connect(process.env.MONGODB_URI);
 		console.log(`🍃 MongoDB Connected: ${conn.connection.host}`);
-		
-		// Initialize session store after MongoDB connection is established
-		mongoose.connection.once('connected', () => {
-			try {
-				sessionStoreInstance = MongoStore.create({
-					client: mongoose.connection.getClient(),
-					dbName: "test",
-					collectionName: "sessions",
-					ttl: 24 * 60 * 60,
-				});
-				console.log("✅ Session store configured using mongoose connection");
-			} catch (error) {
-				console.error("⚠️ Error setting up session store:", error.message);
-			}
-		});
 	} catch (error) {
 		console.error("❌ MongoDB connection error:", error.message);
 		process.exit(1);
@@ -245,13 +227,35 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Session configuration for Google OAuth
-// Use MongoDB store if available, otherwise fall back to MemoryStore
+// Initialize session store using mongoose connection (after connectDB runs)
+let sessionStore;
+try {
+	// Wait for mongoose connection, then create store
+	setTimeout(() => {
+		try {
+			if (mongoose.connection.readyState === 1) {
+				sessionStore = MongoStore.create({
+					client: mongoose.connection.getClient(),
+					dbName: "test",
+					collectionName: "sessions",
+					ttl: 24 * 60 * 60, // 24 hours
+				});
+				console.log("✅ Session store configured");
+			}
+		} catch (error) {
+			console.error("⚠️ Session store setup error:", error.message);
+		}
+	}, 1000); // Small delay to ensure connection is ready
+} catch (error) {
+	console.error("⚠️ Error initializing session store:", error.message);
+}
+
 app.use(
 	session({
 		secret: process.env.SESSION_SECRET || "your-secret-key",
 		resave: false,
 		saveUninitialized: false,
-		store: sessionStoreInstance, // Will be null initially, then updated after DB connects
+		store: sessionStore, // May be undefined, will use MemoryStore as fallback
 		cookie: {
 			secure: process.env.NODE_ENV === "production",
 			maxAge: 24 * 60 * 60 * 1000, // 24 hours
