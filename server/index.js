@@ -45,22 +45,31 @@ const io = new Server(server, {
 // MongoDB Connection
 const connectDB = async () => {
 	try {
-		// Clean up MongoDB URI to ensure proper database name format
 		let mongoUri = process.env.MONGODB_URI || "";
 		
-		// Fix double slashes and ensure database name doesn't start with /
-		if (mongoUri) {
-			// Remove any double slashes in the path
-			mongoUri = mongoUri.replace(/\/\//g, "/");
-			// Ensure database name doesn't have leading slash
-			mongoUri = mongoUri.replace(/mongodb\+srv:\/\/[^/]+\//, (match) => match);
-			// Fix: database/test -> database/test (remove leading slash from database name)
-			const uriPattern = /(mongodb\+srv:\/\/[^/]+)\/(\/?)([^?]+)/;
-			mongoUri = mongoUri.replace(uriPattern, (match, base, slash, dbPart) => {
-				const dbName = dbPart.split("?")[0].replace(/^\//, ""); // Remove leading slash from DB name
-				const query = dbPart.includes("?") ? dbPart.substring(dbPart.indexOf("?")) : "?retryWrites=true&w=majority";
-				return `${base}/${dbName}${query}`;
-			});
+		// Ensure connection string starts with mongodb:// or mongodb+srv://
+		if (!mongoUri.startsWith("mongodb://") && !mongoUri.startsWith("mongodb+srv://")) {
+			throw new Error("Invalid MongoDB connection string format");
+		}
+		
+		// Parse and clean the URI
+		try {
+			const url = new URL(mongoUri);
+			// Extract database name from pathname, remove leading slash
+			let dbName = url.pathname?.replace(/^\//, "") || "test";
+			// Remove trailing slash and query params from dbName
+			dbName = dbName.split("?")[0].split("/")[0];
+			
+			// Reconstruct URI with proper database name
+			const queryParams = url.search || "?retryWrites=true&w=majority";
+			mongoUri = `${url.protocol}//${url.host}/${dbName}${queryParams}`;
+		} catch (parseError) {
+			// If URL parsing fails, use the URI as-is but ensure it has /test
+			if (!mongoUri.includes("/test") && !mongoUri.match(/\/[^/?]+(\?|$)/)) {
+				// Add database name if missing
+				const separator = mongoUri.includes("?") ? mongoUri.indexOf("?") : mongoUri.length;
+				mongoUri = mongoUri.substring(0, separator) + "/test" + mongoUri.substring(separator);
+			}
 		}
 		
 		const conn = await mongoose.connect(mongoUri, {
@@ -70,6 +79,7 @@ const connectDB = async () => {
 		console.log(`📦 Database: ${conn.connection.db.databaseName}`);
 	} catch (error) {
 		console.error("❌ MongoDB connection error:", error.message);
+		console.error("Connection string (first 50 chars):", process.env.MONGODB_URI?.substring(0, 50));
 		process.exit(1);
 	}
 };
