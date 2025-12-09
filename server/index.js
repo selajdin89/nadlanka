@@ -560,59 +560,60 @@ app.get("/api/products", async (req, res) => {
 
 		// Include products that are active OR have no status (for backward compatibility)
 		let query = {
-			$and: [{ $or: [{ status: "active" }, { status: { $exists: false } }] }],
+			$or: [{ status: "active" }, { status: { $exists: false } }],
 		};
+
+		// Build additional filters
+		const additionalFilters = {};
 
 		// Search functionality
 		if (search) {
-			query.$and.push({
-				$or: [
-					{ title: { $regex: search, $options: "i" } },
-					{ description: { $regex: search, $options: "i" } },
-					{ tags: { $in: [new RegExp(search, "i")] } },
-				],
-			});
+			additionalFilters.$or = [
+				{ title: { $regex: search, $options: "i" } },
+				{ description: { $regex: search, $options: "i" } },
+				{ tags: { $in: [new RegExp(search, "i")] } },
+			];
 		}
 
 		// Filter by category (case-insensitive)
 		if (category) {
-			query.$and.push({
-				category: { $regex: new RegExp(`^${category}$`, "i") },
-			});
+			additionalFilters.category = { $regex: new RegExp(`^${category}$`, "i") };
 		}
 
 		// Filter by condition
 		if (condition) {
-			query.$and.push({ condition: condition });
+			additionalFilters.condition = condition;
 		}
 
 		// Filter by price range
 		if (minPrice || maxPrice) {
-			const priceFilter = {};
-			if (minPrice) priceFilter.$gte = Number(minPrice);
-			if (maxPrice) priceFilter.$lte = Number(maxPrice);
-			query.$and.push({ price: priceFilter });
+			additionalFilters.price = {};
+			if (minPrice) additionalFilters.price.$gte = Number(minPrice);
+			if (maxPrice) additionalFilters.price.$lte = Number(maxPrice);
 		}
 
 		// Filter by location
 		if (location) {
-			query.$and.push({ location: { $regex: location, $options: "i" } });
+			additionalFilters.location = { $regex: location, $options: "i" };
 		}
 
 		// Filter by seller
 		if (seller) {
-			query.$and.push({ seller: seller });
+			additionalFilters.seller = seller;
 		}
 
 		// Filter by isUrgent
 		if (isUrgent !== undefined) {
-			query.$and.push({ isUrgent: isUrgent === "true" });
+			additionalFilters.isUrgent = isUrgent === "true";
 		}
 
 		// Filter by isFeatured
 		if (isFeatured !== undefined) {
-			query.$and.push({ isFeatured: isFeatured === "true" });
+			additionalFilters.isFeatured = isFeatured === "true";
 		}
+
+		// Combine all filters
+		query = { ...query, ...additionalFilters };
 
 		// Sorting
 		const sortOptions = {};
@@ -641,7 +642,11 @@ app.get("/api/products", async (req, res) => {
 		});
 	} catch (error) {
 		console.error("Error fetching products:", error);
-		res.status(500).json({ error: "Failed to fetch products" });
+		console.error("Error stack:", error.stack);
+		res.status(500).json({ 
+			error: "Failed to fetch products",
+			message: process.env.NODE_ENV === "development" ? error.message : undefined
+		});
 	}
 });
 
