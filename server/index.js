@@ -47,6 +47,34 @@ const connectDB = async () => {
 	try {
 		const conn = await mongoose.connect(process.env.MONGODB_URI);
 		console.log(`🍃 MongoDB Connected: ${conn.connection.host}`);
+		
+		// Initialize session store after MongoDB connection is established
+		try {
+			const sessionStore = MongoStore.create({
+				client: mongoose.connection.getClient(),
+				dbName: "test", // Explicitly specify database name
+				collectionName: "sessions",
+				ttl: 24 * 60 * 60, // 24 hours in seconds
+			});
+			
+			// Update the session middleware to use the store
+			app.use(
+				session({
+					secret: process.env.SESSION_SECRET || "your-secret-key",
+					resave: false,
+					saveUninitialized: false,
+					store: sessionStore,
+					cookie: {
+						secure: process.env.NODE_ENV === "production",
+						maxAge: 24 * 60 * 60 * 1000, // 24 hours
+					},
+				})
+			);
+			console.log("✅ Session store configured using mongoose connection");
+		} catch (error) {
+			console.error("⚠️ Error setting up session store:", error.message);
+			console.log("Falling back to MemoryStore (not recommended for production)");
+		}
 	} catch (error) {
 		console.error("❌ MongoDB connection error:", error.message);
 		process.exit(1);
@@ -227,32 +255,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Session configuration for Google OAuth
-// Use mongoose connection for MongoStore instead of separate connection
-let sessionStore;
-
-try {
-	// Use mongoose connection instance for session store
-	sessionStore = MongoStore.create({
-		client: mongoose.connection.getClient(),
-		dbName: "test", // Explicitly specify database name
-		collectionName: "sessions",
-		ttl: 24 * 60 * 60, // 24 hours in seconds
-	});
-	console.log("Session store configured using mongoose connection");
-} catch (error) {
-	console.error("Error setting up session store:", error);
-	console.log("Falling back to MemoryStore (not recommended for production)");
-	sessionStore = undefined; // Fallback to MemoryStore if error
-}
-
+// Will be set up after MongoDB connection (see connectDB function above)
+// Temporary session middleware (will be replaced after DB connection)
 app.use(
 	session({
 		secret: process.env.SESSION_SECRET || "your-secret-key",
 		resave: false,
 		saveUninitialized: false,
-		store: sessionStore, // Will be undefined if setup failed, falls back to MemoryStore
+		// Store will be set after MongoDB connects
 		cookie: {
-			secure: process.env.NODE_ENV === "production", // Use secure cookies in production (HTTPS)
+			secure: process.env.NODE_ENV === "production",
 			maxAge: 24 * 60 * 60 * 1000, // 24 hours
 		},
 	})
