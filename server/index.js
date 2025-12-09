@@ -8,6 +8,7 @@ const multer = require("multer");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const session = require("express-session");
+const MongoStore = require("connect-mongo");
 const http = require("http");
 const { Server } = require("socket.io");
 require("dotenv").config();
@@ -231,8 +232,12 @@ app.use(
 		secret: process.env.SESSION_SECRET || "your-secret-key",
 		resave: false,
 		saveUninitialized: false,
+		store: MongoStore.create({
+			mongoUrl: process.env.MONGODB_URI,
+			ttl: 24 * 60 * 60, // 24 hours in seconds
+		}),
 		cookie: {
-			secure: false, // Set to true in production with HTTPS
+			secure: process.env.NODE_ENV === "production", // Use secure cookies in production (HTTPS)
 			maxAge: 24 * 60 * 60 * 1000, // 24 hours
 		},
 	})
