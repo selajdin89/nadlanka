@@ -1103,13 +1103,23 @@ app.post("/api/users", async (req, res) => {
 });
 
 // Serve static files from the React app build directory
+// NOTE: This is disabled because frontend is deployed separately to Netlify
+// Uncomment this only if you want to serve frontend and backend together
+/*
 if (process.env.NODE_ENV === "production") {
-	app.use(express.static(path.join(__dirname, "../client/build")));
-
-	app.get("*", (req, res) => {
-		res.sendFile(path.join(__dirname, "../client/build", "index.html"));
-	});
+	const clientBuildPath = path.join(__dirname, "../client/build");
+	const fs = require("fs");
+	
+	// Only serve frontend if build directory exists
+	if (fs.existsSync(clientBuildPath)) {
+		app.use(express.static(clientBuildPath));
+		
+		app.get("*", (req, res) => {
+			res.sendFile(path.join(clientBuildPath, "index.html"));
+		});
+	}
 }
+*/
 
 // Error handling middleware
 app.use((err, req, res, next) => {
