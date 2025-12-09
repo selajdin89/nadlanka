@@ -45,8 +45,29 @@ const io = new Server(server, {
 // MongoDB Connection
 const connectDB = async () => {
 	try {
-		const conn = await mongoose.connect(process.env.MONGODB_URI);
+		// Clean up MongoDB URI to ensure proper database name format
+		let mongoUri = process.env.MONGODB_URI || "";
+		
+		// Fix double slashes and ensure database name doesn't start with /
+		if (mongoUri) {
+			// Remove any double slashes in the path
+			mongoUri = mongoUri.replace(/\/\//g, "/");
+			// Ensure database name doesn't have leading slash
+			mongoUri = mongoUri.replace(/mongodb\+srv:\/\/[^/]+\//, (match) => match);
+			// Fix: database/test -> database/test (remove leading slash from database name)
+			const uriPattern = /(mongodb\+srv:\/\/[^/]+)\/(\/?)([^?]+)/;
+			mongoUri = mongoUri.replace(uriPattern, (match, base, slash, dbPart) => {
+				const dbName = dbPart.split("?")[0].replace(/^\//, ""); // Remove leading slash from DB name
+				const query = dbPart.includes("?") ? dbPart.substring(dbPart.indexOf("?")) : "?retryWrites=true&w=majority";
+				return `${base}/${dbName}${query}`;
+			});
+		}
+		
+		const conn = await mongoose.connect(mongoUri, {
+			dbName: "test", // Explicitly set database name
+		});
 		console.log(`🍃 MongoDB Connected: ${conn.connection.host}`);
+		console.log(`📦 Database: ${conn.connection.db.databaseName}`);
 	} catch (error) {
 		console.error("❌ MongoDB connection error:", error.message);
 		process.exit(1);
