@@ -8,6 +8,10 @@
   # Build command (runs from base directory)
   command = "npm install && npm run build"
 
+# Node version (optional but recommended)
+[build.environment]
+  NODE_VERSION = "18"
+
 # Redirect rules for React Router (SPA)
 [[redirects]]
   from = "/*"
