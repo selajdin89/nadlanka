@@ -227,35 +227,22 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Session configuration for Google OAuth
-// Extract database name from MONGODB_URI for MongoStore
-const mongoUri = process.env.MONGODB_URI || "";
+// Use mongoose connection for MongoStore instead of separate connection
 let sessionStore;
 
-if (mongoUri) {
-	try {
-		// Parse MongoDB URI to get connection options
-		const uriParts = new URL(mongoUri);
-		// Get database name from path, remove leading slash and ensure it's not empty
-		let dbName = uriParts.pathname?.replace(/^\//, "").replace(/\/.*$/, "") || "test";
-		// Remove any query parameters from dbName if accidentally included
-		dbName = dbName.split("?")[0];
-		
-		// Remove database name from URI to avoid conflicts, MongoStore will use dbName option
-		const baseUri = mongoUri.split("/").slice(0, 3).join("/");
-		const queryString = uriParts.search || "?retryWrites=true&w=majority";
-		
-		sessionStore = MongoStore.create({
-			mongoUrl: `${baseUri}/${dbName}${queryString}`,
-			dbName: dbName, // Explicitly set database name
-			collectionName: "sessions",
-			ttl: 24 * 60 * 60, // 24 hours in seconds
-		});
-		console.log(`Session store configured for database: ${dbName}`);
-	} catch (error) {
-		console.error("Error setting up session store:", error);
-		console.log("Falling back to MemoryStore (not recommended for production)");
-		sessionStore = undefined; // Fallback to MemoryStore if error
-	}
+try {
+	// Use mongoose connection instance for session store
+	sessionStore = MongoStore.create({
+		client: mongoose.connection.getClient(),
+		dbName: "test", // Explicitly specify database name
+		collectionName: "sessions",
+		ttl: 24 * 60 * 60, // 24 hours in seconds
+	});
+	console.log("Session store configured using mongoose connection");
+} catch (error) {
+	console.error("Error setting up session store:", error);
+	console.log("Falling back to MemoryStore (not recommended for production)");
+	sessionStore = undefined; // Fallback to MemoryStore if error
 }
 
 app.use(
