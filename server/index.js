@@ -278,6 +278,26 @@ app.get("/api/health", (req, res) => {
 	});
 });
 
+// Test database connection
+app.get("/api/test-db", async (req, res) => {
+	try {
+		const productCount = await Product.countDocuments();
+		const userCount = await User.countDocuments();
+		res.json({
+			message: "Database connection successful",
+			productCount,
+			userCount,
+			database: mongoose.connection.db.databaseName,
+		});
+	} catch (error) {
+		console.error("Database test error:", error);
+		res.status(500).json({
+			error: "Database test failed",
+			message: error.message,
+		});
+	}
+});
+
 // ===== AUTHENTICATION ROUTES =====
 
 // Google OAuth Routes (only if credentials are available)
