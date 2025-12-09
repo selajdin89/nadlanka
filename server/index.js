@@ -52,24 +52,12 @@ const connectDB = async () => {
 			throw new Error("Invalid MongoDB connection string format");
 		}
 		
-		// Parse and clean the URI
-		try {
-			const url = new URL(mongoUri);
-			// Extract database name from pathname, remove leading slash
-			let dbName = url.pathname?.replace(/^\//, "") || "test";
-			// Remove trailing slash and query params from dbName
-			dbName = dbName.split("?")[0].split("/")[0];
-			
-			// Reconstruct URI with proper database name
-			const queryParams = url.search || "?retryWrites=true&w=majority";
-			mongoUri = `${url.protocol}//${url.host}/${dbName}${queryParams}`;
-		} catch (parseError) {
-			// If URL parsing fails, use the URI as-is but ensure it has /test
-			if (!mongoUri.includes("/test") && !mongoUri.match(/\/[^/?]+(\?|$)/)) {
-				// Add database name if missing
-				const separator = mongoUri.includes("?") ? mongoUri.indexOf("?") : mongoUri.length;
-				mongoUri = mongoUri.substring(0, separator) + "/test" + mongoUri.substring(separator);
-			}
+		// Simple check: if database name is missing (ends with /? or just ?), add /test
+		// Don't use URL parsing as it can corrupt the connection string
+		if (mongoUri.match(/\.mongodb\.net\/\?/) || mongoUri.match(/\.mongodb\.net\?/)) {
+			// Database name missing, add it before the ?
+			mongoUri = mongoUri.replace(/\.mongodb\.net\/\?/, ".mongodb.net/test?");
+			mongoUri = mongoUri.replace(/\.mongodb\.net\?/, ".mongodb.net/test?");
 		}
 		
 		const conn = await mongoose.connect(mongoUri, {
