@@ -227,15 +227,34 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Session configuration for Google OAuth
+// Extract database name from MONGODB_URI for MongoStore
+const mongoUri = process.env.MONGODB_URI || "";
+let sessionStore;
+
+if (mongoUri) {
+	try {
+		// Parse MongoDB URI to get connection options
+		const uriParts = new URL(mongoUri);
+		const dbName = uriParts.pathname?.replace(/^\//, "") || "test"; // Get database name from path
+		
+		sessionStore = MongoStore.create({
+			mongoUrl: mongoUri,
+			dbName: dbName,
+			collectionName: "sessions",
+			ttl: 24 * 60 * 60, // 24 hours in seconds
+		});
+	} catch (error) {
+		console.error("Error setting up session store:", error);
+		sessionStore = undefined; // Fallback to MemoryStore if error
+	}
+}
+
 app.use(
 	session({
 		secret: process.env.SESSION_SECRET || "your-secret-key",
 		resave: false,
 		saveUninitialized: false,
-		store: MongoStore.create({
-			mongoUrl: process.env.MONGODB_URI,
-			ttl: 24 * 60 * 60, // 24 hours in seconds
-		}),
+		store: sessionStore, // Will be undefined if setup failed, falls back to MemoryStore
 		cookie: {
 			secure: process.env.NODE_ENV === "production", // Use secure cookies in production (HTTPS)
 			maxAge: 24 * 60 * 60 * 1000, // 24 hours
