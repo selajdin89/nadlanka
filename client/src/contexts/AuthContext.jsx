@@ -57,6 +57,18 @@ export const AuthProvider = ({ children }) => {
 		if (googleToken) {
 			localStorage.setItem("token", googleToken);
 			setToken(googleToken);
+			axios.defaults.headers.common["Authorization"] = `Bearer ${googleToken}`;
+
+			// Fetch user data after setting token
+			const fetchUser = async () => {
+				try {
+					const response = await axios.get("/api/auth/me");
+					setUser({ ...response.data, token: googleToken });
+				} catch (error) {
+					console.error("Failed to fetch user after OAuth:", error);
+				}
+			};
+			fetchUser();
 
 			// Clean up URL
 			window.history.replaceState({}, document.title, window.location.pathname);

@@ -161,7 +161,7 @@ const Register = () => {
 				</div>
 
 				{/* Google OAuth Button */}
-				<a href="/api/auth/google" className="google-auth-button">
+				<a href={`${import.meta.env.VITE_API_URL || ""}/api/auth/google`} className="google-auth-button">
 					<svg
 						width="20"
 						height="20"
