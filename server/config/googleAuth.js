@@ -9,7 +9,8 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 			{
 				clientID: process.env.GOOGLE_CLIENT_ID,
 				clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-				callbackURL: process.env.CALLBACK_URL || `${process.env.SERVER_URL || process.env.CLIENT_URL || "http://localhost:5000"}/api/auth/google/callback`,
+				// Callback URL - Passport will use full URL if SERVER_URL is set, otherwise relative
+				callbackURL: process.env.CALLBACK_URL || (process.env.SERVER_URL ? `${process.env.SERVER_URL}/api/auth/google/callback` : "/api/auth/google/callback"),
 			},
 			async (accessToken, refreshToken, profile, done) => {
 				try {
