@@ -425,7 +425,7 @@
 .mobile-primary-nav {
 	display: none;
 
-	@media (max-width: 768px) {
+	@media (max-width: 900px) {
 		display: flex;
 		flex-direction: column;
 		margin-bottom: 0;
@@ -1338,7 +1338,7 @@
 	}
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
 	.nav {
 		padding: 1rem;
 		gap: 0.25rem;
@@ -1399,6 +1399,17 @@
 
 		.logo-subtitle {
 			font-size: 0.55rem;
+		}
+	}
+}
+@media (max-width: 1080px) {
+	.logo {
+		.logo-text {
+			font-size: 1.3rem;
+
+			img {
+				max-width: 185px;
+			}
 		}
 	}
 }

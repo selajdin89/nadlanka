@@ -16,9 +16,9 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 		// Default to production URL if not set
 		callbackURL = "https://nadlanka.onrender.com/api/auth/google/callback";
 	}
-	
+
 	console.log(`🔐 Google OAuth callback URL configured: ${callbackURL}`);
-	
+
 	passport.use(
 		new GoogleStrategy(
 			{
