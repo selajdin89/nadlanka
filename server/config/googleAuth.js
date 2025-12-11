@@ -4,13 +4,27 @@ const User = require("../models/User");
 
 // Configure Google OAuth Strategy (only if credentials are available)
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+	// Determine the callback URL
+	let callbackURL;
+	if (process.env.CALLBACK_URL) {
+		callbackURL = process.env.CALLBACK_URL;
+	} else if (process.env.SERVER_URL) {
+		// Ensure no trailing slash in SERVER_URL
+		const serverUrl = process.env.SERVER_URL.replace(/\/$/, "");
+		callbackURL = `${serverUrl}/api/auth/google/callback`;
+	} else {
+		// Default to production URL if not set
+		callbackURL = "https://nadlanka.onrender.com/api/auth/google/callback";
+	}
+	
+	console.log(`🔐 Google OAuth callback URL configured: ${callbackURL}`);
+	
 	passport.use(
 		new GoogleStrategy(
 			{
 				clientID: process.env.GOOGLE_CLIENT_ID,
 				clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-				// Callback URL - Passport will use full URL if SERVER_URL is set, otherwise relative
-				callbackURL: process.env.CALLBACK_URL || (process.env.SERVER_URL ? `${process.env.SERVER_URL}/api/auth/google/callback` : "/api/auth/google/callback"),
+				callbackURL: callbackURL,
 			},
 			async (accessToken, refreshToken, profile, done) => {
 				try {
