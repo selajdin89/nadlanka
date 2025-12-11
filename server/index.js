@@ -3,6 +3,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const path = require("path");
+const fs = require("fs");
 const mongoose = require("mongoose");
 const multer = require("multer");
 const bcrypt = require("bcryptjs");
@@ -13,6 +14,13 @@ const http = require("http");
 const { Server } = require("socket.io");
 require("dotenv").config();
 const passport = require("./config/googleAuth");
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsDir)) {
+	fs.mkdirSync(uploadsDir, { recursive: true });
+	console.log("📁 Created uploads directory");
+}
 
 // Environment variables loaded successfully
 
@@ -358,7 +366,31 @@ app.use(
 		}
 		next();
 	},
-	express.static(path.join(__dirname, "uploads"))
+	express.static(path.join(__dirname, "uploads"), {
+		setHeaders: (res, filePath) => {
+			// Set proper content-type for images
+			if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg")) {
+				res.setHeader("Content-Type", "image/jpeg");
+			} else if (filePath.endsWith(".png")) {
+				res.setHeader("Content-Type", "image/png");
+			} else if (filePath.endsWith(".gif")) {
+				res.setHeader("Content-Type", "image/gif");
+			} else if (filePath.endsWith(".webp")) {
+				res.setHeader("Content-Type", "image/webp");
+			}
+		},
+	}),
+	// Handle 404 for missing images - return a transparent 1x1 PNG instead of HTML
+	(req, res) => {
+		// Return a transparent 1x1 PNG to avoid ORB blocking
+		const transparentPng = Buffer.from(
+			"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+			"base64"
+		);
+		res.setHeader("Content-Type", "image/png");
+		res.setHeader("Content-Length", transparentPng.length);
+		res.status(404).send(transparentPng);
+	}
 );
 
 // API Routes
