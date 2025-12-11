@@ -366,30 +366,50 @@ app.use(
 		}
 		next();
 	},
-	express.static(path.join(__dirname, "uploads"), {
-		setHeaders: (res, filePath) => {
-			// Set proper content-type for images
-			if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg")) {
-				res.setHeader("Content-Type", "image/jpeg");
-			} else if (filePath.endsWith(".png")) {
+	// Custom handler for uploads - check if file exists, otherwise return transparent PNG
+	(req, res, next) => {
+		const requestedPath = req.path.replace(/^\/+/, ""); // Remove leading slashes
+		const filePath = path.join(__dirname, "uploads", requestedPath);
+		
+		// Security: ensure the resolved path is within uploads directory
+		const uploadsDir = path.join(__dirname, "uploads");
+		const resolvedPath = path.resolve(filePath);
+		if (!resolvedPath.startsWith(path.resolve(uploadsDir))) {
+			return res.status(403).send("Forbidden");
+		}
+		
+		// Check if file exists
+		fs.access(filePath, fs.constants.F_OK, (err) => {
+			if (err) {
+				// File doesn't exist - return transparent PNG to avoid ORB blocking
+				const transparentPng = Buffer.from(
+					"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+					"base64"
+				);
 				res.setHeader("Content-Type", "image/png");
-			} else if (filePath.endsWith(".gif")) {
-				res.setHeader("Content-Type", "image/gif");
-			} else if (filePath.endsWith(".webp")) {
-				res.setHeader("Content-Type", "image/webp");
+				res.setHeader("Content-Length", transparentPng.length);
+				res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+				res.status(200).send(transparentPng); // Return 200 to avoid errors
+				return;
 			}
-		},
-	}),
-	// Handle 404 for missing images - return a transparent 1x1 PNG instead of HTML
-	(req, res) => {
-		// Return a transparent 1x1 PNG to avoid ORB blocking
-		const transparentPng = Buffer.from(
-			"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-			"base64"
-		);
-		res.setHeader("Content-Type", "image/png");
-		res.setHeader("Content-Length", transparentPng.length);
-		res.status(404).send(transparentPng);
+			
+			// File exists - set proper content-type and serve it
+			const ext = path.extname(filePath).toLowerCase();
+			if (ext === ".jpg" || ext === ".jpeg") {
+				res.setHeader("Content-Type", "image/jpeg");
+			} else if (ext === ".png") {
+				res.setHeader("Content-Type", "image/png");
+			} else if (ext === ".gif") {
+				res.setHeader("Content-Type", "image/gif");
+			} else if (ext === ".webp") {
+				res.setHeader("Content-Type", "image/webp");
+			} else {
+				res.setHeader("Content-Type", "application/octet-stream");
+			}
+			
+			// Serve the file
+			res.sendFile(filePath);
+		});
 	}
 );
 
