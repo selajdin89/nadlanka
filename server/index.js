@@ -54,20 +54,26 @@ const io = new Server(server, {
 const connectDB = async () => {
 	try {
 		let mongoUri = process.env.MONGODB_URI || "";
-		
+
 		// Ensure connection string starts with mongodb:// or mongodb+srv://
-		if (!mongoUri.startsWith("mongodb://") && !mongoUri.startsWith("mongodb+srv://")) {
+		if (
+			!mongoUri.startsWith("mongodb://") &&
+			!mongoUri.startsWith("mongodb+srv://")
+		) {
 			throw new Error("Invalid MongoDB connection string format");
 		}
-		
+
 		// Simple check: if database name is missing (ends with /? or just ?), add /test
 		// Don't use URL parsing as it can corrupt the connection string
-		if (mongoUri.match(/\.mongodb\.net\/\?/) || mongoUri.match(/\.mongodb\.net\?/)) {
+		if (
+			mongoUri.match(/\.mongodb\.net\/\?/) ||
+			mongoUri.match(/\.mongodb\.net\?/)
+		) {
 			// Database name missing, add it before the ?
 			mongoUri = mongoUri.replace(/\.mongodb\.net\/\?/, ".mongodb.net/test?");
 			mongoUri = mongoUri.replace(/\.mongodb\.net\?/, ".mongodb.net/test?");
 		}
-		
+
 		const conn = await mongoose.connect(mongoUri, {
 			dbName: "test", // Explicitly set database name
 		});
@@ -75,7 +81,10 @@ const connectDB = async () => {
 		console.log(`📦 Database: ${conn.connection.db.databaseName}`);
 	} catch (error) {
 		console.error("❌ MongoDB connection error:", error.message);
-		console.error("Connection string (first 50 chars):", process.env.MONGODB_URI?.substring(0, 50));
+		console.error(
+			"Connection string (first 50 chars):",
+			process.env.MONGODB_URI?.substring(0, 50)
+		);
 		process.exit(1);
 	}
 };
@@ -87,15 +96,15 @@ connectDB();
 // Converts localhost URLs and relative URLs to use SERVER_URL in production
 const normalizeImageUrl = (imageUrl) => {
 	if (!imageUrl) return imageUrl;
-	
+
 	// If SERVER_URL is set (production), use it for image URLs
 	const serverUrl = process.env.SERVER_URL?.replace(/\/$/, "") || "";
-	
+
 	// If image URL is already using the correct server URL, return as-is
 	if (serverUrl && imageUrl.startsWith(serverUrl)) {
 		return imageUrl;
 	}
-	
+
 	// If image URL starts with localhost or 127.0.0.1, replace with SERVER_URL
 	if (imageUrl.includes("localhost") || imageUrl.includes("127.0.0.1")) {
 		if (serverUrl) {
@@ -104,35 +113,37 @@ const normalizeImageUrl = (imageUrl) => {
 			return `${serverUrl}${urlPath}`;
 		}
 	}
-	
+
 	// If image URL is relative (starts with /), prepend SERVER_URL
 	if (imageUrl.startsWith("/") && serverUrl) {
 		return `${serverUrl}${imageUrl}`;
 	}
-	
+
 	// If image URL is already absolute but not localhost, return as-is
 	if (imageUrl.startsWith("http")) {
 		return imageUrl;
 	}
-	
+
 	// Fallback: if we have SERVER_URL, use it
 	if (serverUrl) {
-		return imageUrl.startsWith("/") ? `${serverUrl}${imageUrl}` : `${serverUrl}/${imageUrl}`;
+		return imageUrl.startsWith("/")
+			? `${serverUrl}${imageUrl}`
+			: `${serverUrl}/${imageUrl}`;
 	}
-	
+
 	return imageUrl;
 };
 
 // Helper function to normalize product image URLs
 const normalizeProductImages = (product) => {
 	if (!product) return product;
-	
+
 	const productObj = product.toObject ? product.toObject() : product;
-	
+
 	if (productObj.images && Array.isArray(productObj.images)) {
 		productObj.images = productObj.images.map(normalizeImageUrl);
 	}
-	
+
 	return productObj;
 };
 
@@ -370,14 +381,14 @@ app.use(
 	(req, res, next) => {
 		const requestedPath = req.path.replace(/^\/+/, ""); // Remove leading slashes
 		const filePath = path.join(__dirname, "uploads", requestedPath);
-		
+
 		// Security: ensure the resolved path is within uploads directory
 		const uploadsDir = path.join(__dirname, "uploads");
 		const resolvedPath = path.resolve(filePath);
 		if (!resolvedPath.startsWith(path.resolve(uploadsDir))) {
 			return res.status(403).send("Forbidden");
 		}
-		
+
 		// Check if file exists
 		fs.access(filePath, fs.constants.F_OK, (err) => {
 			if (err) {
@@ -392,7 +403,7 @@ app.use(
 				res.status(200).send(transparentPng); // Return 200 to avoid errors
 				return;
 			}
-			
+
 			// File exists - set proper content-type and serve it
 			const ext = path.extname(filePath).toLowerCase();
 			if (ext === ".jpg" || ext === ".jpeg") {
@@ -406,7 +417,7 @@ app.use(
 			} else {
 				res.setHeader("Content-Type", "application/octet-stream");
 			}
-			
+
 			// Serve the file
 			res.sendFile(filePath);
 		});
@@ -711,9 +722,10 @@ app.post("/api/upload", upload.array("images", 10), (req, res) => {
 		}
 
 		// Use SERVER_URL in production, otherwise use request protocol/host
-		const serverUrl = process.env.SERVER_URL?.replace(/\/$/, "") || 
+		const serverUrl =
+			process.env.SERVER_URL?.replace(/\/$/, "") ||
 			`${req.protocol}://${req.get("host")}`;
-		
+
 		const imageUrls = req.files.map(
 			(file) => `${serverUrl}/uploads/${file.filename}`
 		);
@@ -837,9 +849,10 @@ app.get("/api/products", async (req, res) => {
 	} catch (error) {
 		console.error("Error fetching products:", error);
 		console.error("Error stack:", error.stack);
-		res.status(500).json({ 
+		res.status(500).json({
 			error: "Failed to fetch products",
-			message: process.env.NODE_ENV === "development" ? error.message : undefined
+			message:
+				process.env.NODE_ENV === "development" ? error.message : undefined,
 		});
 	}
 });
@@ -971,10 +984,10 @@ app.get("/api/products/seller/:sellerId", async (req, res) => {
 		const products = await Product.find({ seller: req.params.sellerId })
 			.populate("seller", "name email phone location")
 			.sort({ createdAt: -1 });
-		
+
 		// Normalize image URLs for all products
 		const normalizedProducts = products.map(normalizeProductImages);
-		
+
 		res.json(normalizedProducts);
 	} catch (error) {
 		console.error("Error fetching seller products:", error);

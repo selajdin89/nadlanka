@@ -331,7 +331,8 @@ const ProductDetail = () => {
 										onError={(e) => {
 											// Prevent infinite loop by stopping after first error
 											e.target.style.display = "none";
-											e.target.parentElement.innerHTML = '<div class="placeholder-image">Image failed to load</div>';
+											e.target.parentElement.innerHTML =
+												'<div class="placeholder-image">Image failed to load</div>';
 										}}
 									/>
 								</div>
