@@ -75,6 +75,59 @@ const connectDB = async () => {
 // Connect to MongoDB
 connectDB();
 
+// Helper function to normalize image URLs
+// Converts localhost URLs and relative URLs to use SERVER_URL in production
+const normalizeImageUrl = (imageUrl) => {
+	if (!imageUrl) return imageUrl;
+	
+	// If SERVER_URL is set (production), use it for image URLs
+	const serverUrl = process.env.SERVER_URL?.replace(/\/$/, "") || "";
+	
+	// If image URL is already using the correct server URL, return as-is
+	if (serverUrl && imageUrl.startsWith(serverUrl)) {
+		return imageUrl;
+	}
+	
+	// If image URL starts with localhost or 127.0.0.1, replace with SERVER_URL
+	if (imageUrl.includes("localhost") || imageUrl.includes("127.0.0.1")) {
+		if (serverUrl) {
+			// Extract the path from the URL (e.g., /uploads/image.jpg)
+			const urlPath = imageUrl.replace(/^https?:\/\/[^/]+/, "");
+			return `${serverUrl}${urlPath}`;
+		}
+	}
+	
+	// If image URL is relative (starts with /), prepend SERVER_URL
+	if (imageUrl.startsWith("/") && serverUrl) {
+		return `${serverUrl}${imageUrl}`;
+	}
+	
+	// If image URL is already absolute but not localhost, return as-is
+	if (imageUrl.startsWith("http")) {
+		return imageUrl;
+	}
+	
+	// Fallback: if we have SERVER_URL, use it
+	if (serverUrl) {
+		return imageUrl.startsWith("/") ? `${serverUrl}${imageUrl}` : `${serverUrl}/${imageUrl}`;
+	}
+	
+	return imageUrl;
+};
+
+// Helper function to normalize product image URLs
+const normalizeProductImages = (product) => {
+	if (!product) return product;
+	
+	const productObj = product.toObject ? product.toObject() : product;
+	
+	if (productObj.images && Array.isArray(productObj.images)) {
+		productObj.images = productObj.images.map(normalizeImageUrl);
+	}
+	
+	return productObj;
+};
+
 // Multer configuration for file uploads
 const storage = multer.diskStorage({
 	destination: (req, file, cb) => {
@@ -582,8 +635,12 @@ app.post("/api/upload", upload.array("images", 10), (req, res) => {
 			return res.status(400).json({ error: "No images uploaded" });
 		}
 
+		// Use SERVER_URL in production, otherwise use request protocol/host
+		const serverUrl = process.env.SERVER_URL?.replace(/\/$/, "") || 
+			`${req.protocol}://${req.get("host")}`;
+		
 		const imageUrls = req.files.map(
-			(file) => `${req.protocol}://${req.get("host")}/uploads/${file.filename}`
+			(file) => `${serverUrl}/uploads/${file.filename}`
 		);
 
 		res.json({
@@ -689,8 +746,11 @@ app.get("/api/products", async (req, res) => {
 
 		const total = await Product.countDocuments(query);
 
+		// Normalize image URLs for all products
+		const normalizedProducts = products.map(normalizeProductImages);
+
 		res.json({
-			products,
+			products: normalizedProducts,
 			pagination: {
 				currentPage: Number(page),
 				totalPages: Math.ceil(total / Number(limit)),
@@ -723,7 +783,10 @@ app.get("/api/products/:id", async (req, res) => {
 		// Increment view count
 		await Product.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } });
 
-		res.json(product);
+		// Normalize image URLs
+		const normalizedProduct = normalizeProductImages(product);
+
+		res.json(normalizedProduct);
 	} catch (error) {
 		console.error("Error fetching product:", error);
 		res.status(500).json({ error: "Failed to fetch product" });
@@ -781,7 +844,10 @@ app.post("/api/products", authenticateToken, async (req, res) => {
 			"name email phone location"
 		);
 
-		res.status(201).json(populatedProduct);
+		// Normalize image URLs
+		const normalizedProduct = normalizeProductImages(populatedProduct);
+
+		res.status(201).json(normalizedProduct);
 	} catch (error) {
 		console.error("Error creating product:", error);
 		res.status(500).json({ error: "Failed to create product" });
@@ -800,7 +866,10 @@ app.put("/api/products/:id", authenticateToken, async (req, res) => {
 			return res.status(404).json({ error: "Product not found" });
 		}
 
-		res.json(product);
+		// Normalize image URLs
+		const normalizedProduct = normalizeProductImages(product);
+
+		res.json(normalizedProduct);
 	} catch (error) {
 		console.error("Error updating product:", error);
 		res.status(500).json({ error: "Failed to update product" });
@@ -827,7 +896,11 @@ app.get("/api/products/seller/:sellerId", async (req, res) => {
 		const products = await Product.find({ seller: req.params.sellerId })
 			.populate("seller", "name email phone location")
 			.sort({ createdAt: -1 });
-		res.json(products);
+		
+		// Normalize image URLs for all products
+		const normalizedProducts = products.map(normalizeProductImages);
+		
+		res.json(normalizedProducts);
 	} catch (error) {
 		console.error("Error fetching seller products:", error);
 		res.status(500).json({ error: "Failed to fetch seller products" });
@@ -913,10 +986,21 @@ app.get("/api/favorites", authenticateToken, async (req, res) => {
 		// Filter out favorites where product no longer exists
 		const validFavorites = favorites.filter((fav) => fav.product !== null);
 
+		// Normalize image URLs for products in favorites
+		const normalizedFavorites = validFavorites.map((fav) => {
+			if (fav.product) {
+				return {
+					...fav.toObject(),
+					product: normalizeProductImages(fav.product),
+				};
+			}
+			return fav;
+		});
+
 		const totalFavorites = await Favorite.countDocuments({ user: userId });
 
 		res.json({
-			favorites: validFavorites,
+			favorites: normalizedFavorites,
 			pagination: {
 				currentPage: Number(page),
 				totalPages: Math.ceil(totalFavorites / Number(limit)),
