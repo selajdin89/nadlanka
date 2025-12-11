@@ -680,6 +680,29 @@ app.put("/api/auth/change-password", authenticateToken, async (req, res) => {
 	}
 });
 
+// Debug endpoint to check uploads directory
+app.get("/api/debug/uploads", (req, res) => {
+	try {
+		const uploadsDir = path.join(__dirname, "uploads");
+		fs.readdir(uploadsDir, (err, files) => {
+			if (err) {
+				return res.json({
+					exists: false,
+					error: err.message,
+					files: [],
+				});
+			}
+			res.json({
+				exists: true,
+				fileCount: files.length,
+				files: files.slice(0, 50), // Show first 50 files
+			});
+		});
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+});
+
 // Image upload endpoint
 app.post("/api/upload", upload.array("images", 10), (req, res) => {
 	try {
