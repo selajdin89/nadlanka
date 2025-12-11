@@ -172,7 +172,8 @@ const FavoritesSidebar = ({ isOpen, onClose }) => {
 													src={product.images[0]}
 													alt={product.title}
 													onError={(e) => {
-														e.target.src = "/placeholder-image.jpg";
+														// Prevent infinite loop by hiding broken images
+														e.target.style.display = "none";
 													}}
 												/>
 											</div>

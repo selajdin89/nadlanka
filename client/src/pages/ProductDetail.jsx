@@ -329,7 +329,9 @@ const ProductDetail = () => {
 										alt={`${product.title} ${selectedImageIndex + 1}`}
 										className="main-product-image"
 										onError={(e) => {
-											e.target.src = "/placeholder-image.jpg";
+											// Prevent infinite loop by stopping after first error
+											e.target.style.display = "none";
+											e.target.parentElement.innerHTML = '<div class="placeholder-image">Image failed to load</div>';
 										}}
 									/>
 								</div>
@@ -349,7 +351,8 @@ const ProductDetail = () => {
 													alt={`${product.title} thumbnail ${index + 1}`}
 													className="thumbnail-image"
 													onError={(e) => {
-														e.target.src = "/placeholder-image.jpg";
+														// Prevent infinite loop by hiding broken images
+														e.target.style.display = "none";
 													}}
 												/>
 											</div>

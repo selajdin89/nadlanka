@@ -117,9 +117,6 @@ const Favorites = () => {
 											<ProductImageSlider
 												images={product.images}
 												title={product.title}
-												onError={(e) => {
-													e.target.src = "/placeholder-image.jpg";
-												}}
 											/>
 											<div className="favorite-btn-wrapper">
 												<FavoriteButton

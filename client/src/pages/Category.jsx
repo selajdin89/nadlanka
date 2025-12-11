@@ -506,9 +506,6 @@ const Category = () => {
 										<ProductImageSlider
 											images={product.images}
 											title={product.title}
-											onError={(e) => {
-												e.target.src = "/placeholder-image.jpg";
-											}}
 										/>
 										<div className="favorite-btn-wrapper">
 											<FavoriteButton productId={product._id} size="small" />
