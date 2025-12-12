@@ -329,13 +329,16 @@ const Profile = () => {
 												<div className="product-actions">
 													<Link
 														to={`/products/${product._id}`}
-														className="btn btn-sm btn-outline"
+														className="btn btn-view"
 													>
 														{t("common.view") || "View"}
 													</Link>
-													<button className="btn btn-sm btn-secondary">
+													<Link
+														to={`/edit-product/${product._id}`}
+														className="btn btn-edit"
+													>
 														{t("common.edit") || "Edit"}
-													</button>
+													</Link>
 												</div>
 											</div>
 										</div>
