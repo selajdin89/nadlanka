@@ -15,6 +15,19 @@ const { Server } = require("socket.io");
 require("dotenv").config();
 const passport = require("./config/googleAuth");
 
+// Cloudinary configuration
+const cloudinary = require("cloudinary").v2;
+if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+	cloudinary.config({
+		cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+		api_key: process.env.CLOUDINARY_API_KEY,
+		api_secret: process.env.CLOUDINARY_API_SECRET,
+	});
+	console.log("☁️ Cloudinary configured successfully");
+} else {
+	console.warn("⚠️ Cloudinary not configured - image uploads will use local storage");
+}
+
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadsDir)) {
@@ -94,8 +107,26 @@ connectDB();
 
 // Helper function to normalize image URLs
 // Converts localhost URLs and relative URLs to use SERVER_URL in production
+// Leaves Cloudinary and other external URLs unchanged
 const normalizeImageUrl = (imageUrl) => {
 	if (!imageUrl) return imageUrl;
+
+	// Don't modify Cloudinary URLs or other external URLs (Unsplash, etc.)
+	if (imageUrl.includes("res.cloudinary.com") || 
+		imageUrl.includes("cloudinary.com") ||
+		imageUrl.includes("unsplash.com") ||
+		imageUrl.includes("http://") || imageUrl.includes("https://")) {
+		// Check if it's a localhost URL that needs fixing
+		if (imageUrl.includes("localhost") || imageUrl.includes("127.0.0.1")) {
+			const serverUrl = process.env.SERVER_URL?.replace(/\/$/, "") || "";
+			if (serverUrl) {
+				const urlPath = imageUrl.replace(/^https?:\/\/[^/]+/, "");
+				return `${serverUrl}${urlPath}`;
+			}
+		}
+		// External URL (Cloudinary, Unsplash, etc.) - return as-is
+		return imageUrl;
+	}
 
 	// If SERVER_URL is set (production), use it for image URLs
 	const serverUrl = process.env.SERVER_URL?.replace(/\/$/, "") || "";
@@ -117,11 +148,6 @@ const normalizeImageUrl = (imageUrl) => {
 	// If image URL is relative (starts with /), prepend SERVER_URL
 	if (imageUrl.startsWith("/") && serverUrl) {
 		return `${serverUrl}${imageUrl}`;
-	}
-
-	// If image URL is already absolute but not localhost, return as-is
-	if (imageUrl.startsWith("http")) {
-		return imageUrl;
 	}
 
 	// Fallback: if we have SERVER_URL, use it
@@ -148,29 +174,13 @@ const normalizeProductImages = (product) => {
 };
 
 // Multer configuration for file uploads
-const storage = multer.diskStorage({
-	destination: (req, file, cb) => {
-		// Use absolute path to ensure it works on Render
-		const uploadsDir = path.join(__dirname, "uploads");
-		// Ensure directory exists
-		if (!fs.existsSync(uploadsDir)) {
-			fs.mkdirSync(uploadsDir, { recursive: true });
-		}
-		cb(null, uploadsDir);
-	},
-	filename: (req, file, cb) => {
-		const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-		cb(
-			null,
-			file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
-		);
-	},
-});
+// Use memory storage to upload directly to Cloudinary
+const storage = multer.memoryStorage();
 
 const upload = multer({
 	storage: storage,
 	limits: {
-		fileSize: 5 * 1024 * 1024, // 5MB limit
+		fileSize: 10 * 1024 * 1024, // 10MB limit (Cloudinary can handle larger files)
 	},
 	fileFilter: (req, file, cb) => {
 		if (file.mimetype.startsWith("image/")) {
@@ -721,40 +731,83 @@ app.get("/api/debug/uploads", (req, res) => {
 });
 
 // Image upload endpoint
-app.post("/api/upload", upload.array("images", 10), (req, res) => {
+app.post("/api/upload", upload.array("images", 10), async (req, res) => {
 	try {
 		if (!req.files || req.files.length === 0) {
 			return res.status(400).json({ error: "No images uploaded" });
 		}
 
-		// Log upload details for debugging
-		console.log(`📤 Uploaded ${req.files.length} file(s)`);
-		req.files.forEach((file, index) => {
-			console.log(`  File ${index + 1}: ${file.filename} (${file.size} bytes)`);
-			console.log(`  Path: ${file.path}`);
-			// Verify file actually exists
-			if (fs.existsSync(file.path)) {
-				console.log(`  ✅ File exists at: ${file.path}`);
-			} else {
-				console.error(`  ❌ File NOT found at: ${file.path}`);
+		// Check if Cloudinary is configured
+		const useCloudinary = process.env.CLOUDINARY_CLOUD_NAME && 
+							  process.env.CLOUDINARY_API_KEY && 
+							  process.env.CLOUDINARY_API_SECRET;
+
+		if (useCloudinary) {
+			// Upload to Cloudinary with automatic compression
+			console.log(`📤 Uploading ${req.files.length} file(s) to Cloudinary`);
+			const uploadPromises = req.files.map(async (file) => {
+				return new Promise((resolve, reject) => {
+					const uploadOptions = {
+						folder: "nadlanka/products", // Organize images in folder
+						resource_type: "image",
+						// Automatic optimization settings
+						quality: "auto:good", // Good quality with compression
+						fetch_format: "auto", // Automatically serve WebP when supported
+						width: 1200, // Max width to reduce file size
+						height: 1200, // Max height
+						crop: "limit", // Don't crop, just limit dimensions
+					};
+
+					const uploadStream = cloudinary.uploader.upload_stream(
+						uploadOptions,
+						(error, result) => {
+							if (error) {
+								console.error(`❌ Cloudinary upload error:`, error);
+								reject(error);
+							} else {
+								console.log(`  ✅ Uploaded: ${result.public_id} (${result.bytes} bytes, original: ${file.size} bytes)`);
+								resolve(result.secure_url); // Return HTTPS URL
+							}
+						}
+					);
+
+					uploadStream.end(file.buffer);
+				});
+			});
+
+			const imageUrls = await Promise.all(uploadPromises);
+			console.log(`🔗 Generated Cloudinary URLs:`, imageUrls);
+
+			res.json({
+				message: "Images uploaded successfully to Cloudinary",
+				imageUrls: imageUrls,
+			});
+		} else {
+			// Fallback to local storage if Cloudinary not configured
+			console.warn("⚠️ Cloudinary not configured, using local storage");
+			const uploadsDir = path.join(__dirname, "uploads");
+			if (!fs.existsSync(uploadsDir)) {
+				fs.mkdirSync(uploadsDir, { recursive: true });
 			}
-		});
 
-		// Use SERVER_URL in production, otherwise use request protocol/host
-		const serverUrl =
-			process.env.SERVER_URL?.replace(/\/$/, "") ||
-			`${req.protocol}://${req.get("host")}`;
+			const imageUrls = [];
+			for (const file of req.files) {
+				const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+				const filename = file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname);
+				const filePath = path.join(uploadsDir, filename);
+				
+				fs.writeFileSync(filePath, file.buffer);
+				
+				const serverUrl = process.env.SERVER_URL?.replace(/\/$/, "") || 
+								  `${req.protocol}://${req.get("host")}`;
+				imageUrls.push(`${serverUrl}/uploads/${filename}`);
+			}
 
-		const imageUrls = req.files.map(
-			(file) => `${serverUrl}/uploads/${file.filename}`
-		);
-
-		console.log(`🔗 Generated URLs:`, imageUrls);
-
-		res.json({
-			message: "Images uploaded successfully",
-			imageUrls: imageUrls,
-		});
+			res.json({
+				message: "Images uploaded successfully (local storage)",
+				imageUrls: imageUrls,
+			});
+		}
 	} catch (error) {
 		console.error("❌ Image upload error:", error);
 		console.error("Error stack:", error.stack);
