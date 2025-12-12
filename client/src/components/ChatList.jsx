@@ -90,13 +90,41 @@ const ChatList = ({ onChatSelect, onCreateChat, onUnreadCountChange }) => {
 	};
 
 	const fetchUnreadCount = async () => {
+		if (!user || !user._id || !user.token) {
+			setUnreadCount(0);
+			return;
+		}
+		
 		try {
-			const response = await fetch(`/api/chat/user/${user._id}/unread-count`, {
+			const API_BASE_URL = import.meta.env.VITE_API_URL || "";
+			const url = `${API_BASE_URL}/api/chat/user/${user._id}/unread-count`;
+			
+			const response = await fetch(url, {
 				headers: {
 					Authorization: `Bearer ${user.token}`,
 					"Content-Type": "application/json",
 				},
 			});
+			
+			// Check if response is ok and is JSON
+			if (!response.ok) {
+				// If not ok, don't try to parse as JSON
+				if (response.status === 401 || response.status === 403) {
+					// User not authenticated or unauthorized - set count to 0
+					setUnreadCount(0);
+					return;
+				}
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+			
+			// Check if response is actually JSON
+			const contentType = response.headers.get("content-type");
+			if (!contentType || !contentType.includes("application/json")) {
+				console.warn("Response is not JSON, got:", contentType);
+				setUnreadCount(0);
+				return;
+			}
+			
 			const data = await response.json();
 			const newUnreadCount = data.unreadCount || 0;
 			setUnreadCount(newUnreadCount);
@@ -107,6 +135,8 @@ const ChatList = ({ onChatSelect, onCreateChat, onUnreadCountChange }) => {
 			}
 		} catch (error) {
 			console.error("Error fetching unread count:", error);
+			// Set to 0 on error to avoid showing incorrect count
+			setUnreadCount(0);
 		}
 	};
 
