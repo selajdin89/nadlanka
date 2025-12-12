@@ -47,7 +47,14 @@ const ProductImageSlider = ({ images, title, onError }) => {
 				<img
 					src={images[currentImageIndex]}
 					alt={`${title} ${currentImageIndex + 1}`}
-					onError={handleImageError}
+					onError={(e) => {
+						console.warn("Image failed to load:", images[currentImageIndex], e);
+						handleImageError(e);
+					}}
+					onLoad={() => {
+						// Image loaded successfully
+						setImageError(false);
+					}}
 				/>
 			)}
 
