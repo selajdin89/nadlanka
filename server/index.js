@@ -150,7 +150,13 @@ const normalizeProductImages = (product) => {
 // Multer configuration for file uploads
 const storage = multer.diskStorage({
 	destination: (req, file, cb) => {
-		cb(null, "uploads/");
+		// Use absolute path to ensure it works on Render
+		const uploadsDir = path.join(__dirname, "uploads");
+		// Ensure directory exists
+		if (!fs.existsSync(uploadsDir)) {
+			fs.mkdirSync(uploadsDir, { recursive: true });
+		}
+		cb(null, uploadsDir);
 	},
 	filename: (req, file, cb) => {
 		const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -721,6 +727,19 @@ app.post("/api/upload", upload.array("images", 10), (req, res) => {
 			return res.status(400).json({ error: "No images uploaded" });
 		}
 
+		// Log upload details for debugging
+		console.log(`📤 Uploaded ${req.files.length} file(s)`);
+		req.files.forEach((file, index) => {
+			console.log(`  File ${index + 1}: ${file.filename} (${file.size} bytes)`);
+			console.log(`  Path: ${file.path}`);
+			// Verify file actually exists
+			if (fs.existsSync(file.path)) {
+				console.log(`  ✅ File exists at: ${file.path}`);
+			} else {
+				console.error(`  ❌ File NOT found at: ${file.path}`);
+			}
+		});
+
 		// Use SERVER_URL in production, otherwise use request protocol/host
 		const serverUrl =
 			process.env.SERVER_URL?.replace(/\/$/, "") ||
@@ -730,13 +749,19 @@ app.post("/api/upload", upload.array("images", 10), (req, res) => {
 			(file) => `${serverUrl}/uploads/${file.filename}`
 		);
 
+		console.log(`🔗 Generated URLs:`, imageUrls);
+
 		res.json({
 			message: "Images uploaded successfully",
 			imageUrls: imageUrls,
 		});
 	} catch (error) {
-		console.error("Image upload error:", error);
-		res.status(500).json({ error: "Failed to upload images" });
+		console.error("❌ Image upload error:", error);
+		console.error("Error stack:", error.stack);
+		res.status(500).json({ 
+			error: "Failed to upload images",
+			message: process.env.NODE_ENV === "development" ? error.message : undefined
+		});
 	}
 });
 
