@@ -15,6 +15,7 @@ const EditProduct = () => {
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState(null);
+	const [uploadingImages, setUploadingImages] = useState(false);
 
 	// Form state
 	const [formData, setFormData] = useState({
@@ -22,11 +23,26 @@ const EditProduct = () => {
 		description: "",
 		price: "",
 		category: "",
+		categoryType: "", // general, realEstate, cars
 		condition: "",
 		location: "",
 		status: "active",
 		images: [],
 		tags: "",
+		categorySpecific: {
+			// Real Estate fields
+			propertyType: "",
+			area: "",
+			address: "",
+			bedrooms: "",
+			bathrooms: "",
+			// Car fields
+			fuelType: "",
+			mileage: "",
+			year: "",
+			transmission: "",
+			color: "",
+		},
 	});
 
 	useEffect(() => {
@@ -63,16 +79,37 @@ const EditProduct = () => {
 				return dbCondition;
 			};
 
+			// Determine category type
+			let categoryType = "general";
+			if (productData.category === "Real Estate") {
+				categoryType = "realEstate";
+			} else if (productData.category === "Cars") {
+				categoryType = "cars";
+			}
+
 			const newFormData = {
 				title: productData.title || "",
 				description: productData.description || "",
 				price: productData.price || "",
 				category: convertCategory(productData.category) || "",
+				categoryType: categoryType,
 				condition: convertCondition(productData.condition) || "",
 				location: productData.location || "",
 				status: productData.status || "active",
 				images: productData.images || [],
 				tags: productData.tags ? productData.tags.join(", ") : "",
+				categorySpecific: productData.categorySpecific || {
+					propertyType: "",
+					area: "",
+					address: "",
+					bedrooms: "",
+					bathrooms: "",
+					fuelType: "",
+					mileage: "",
+					year: "",
+					transmission: "",
+					color: "",
+				},
 			};
 
 			setProduct(productData);
@@ -87,10 +124,80 @@ const EditProduct = () => {
 
 	const handleInputChange = (e) => {
 		const { name, value } = e.target;
-		setFormData((prev) => ({
-			...prev,
-			[name]: value,
-		}));
+		
+		// Handle nested properties (categorySpecific, contactInfo)
+		if (name.includes(".")) {
+			const [parent, child] = name.split(".");
+			if (parent === "categorySpecific") {
+				setFormData((prev) => ({
+					...prev,
+					categorySpecific: {
+						...prev.categorySpecific,
+						[child]: value,
+					},
+				}));
+			} else {
+				setFormData((prev) => ({
+					...prev,
+					[parent]: {
+						...prev[parent],
+						[child]: value,
+					},
+				}));
+			}
+		} else {
+			// Handle category dropdown selection
+			if (name === "category") {
+				let categoryType = "general";
+				if (value === "Real Estate") {
+					categoryType = "realEstate";
+				} else if (value === "Cars") {
+					categoryType = "cars";
+				}
+
+				setFormData((prev) => ({
+					...prev,
+					category: value,
+					categoryType: categoryType,
+				}));
+			} else {
+				setFormData((prev) => ({
+					...prev,
+					[name]: value,
+				}));
+			}
+		}
+	};
+
+	const handleImageChange = async (e) => {
+		const files = Array.from(e.target.files);
+		if (files.length === 0) return;
+
+		setUploadingImages(true);
+		try {
+			const formDataUpload = new FormData();
+			files.forEach((file) => {
+				formDataUpload.append("images", file);
+			});
+
+			const response = await axios.post("/api/upload", formDataUpload, {
+				headers: {
+					"Content-Type": "multipart/form-data",
+				},
+			});
+
+			setFormData((prev) => ({
+				...prev,
+				images: [...prev.images, ...response.data.imageUrls],
+			}));
+		} catch (error) {
+			console.error("Error uploading images:", error);
+			alert("Failed to upload images. Please try again.");
+		} finally {
+			setUploadingImages(false);
+			// Reset file input
+			e.target.value = "";
+		}
 	};
 
 	const handleImageRemove = (index) => {
@@ -124,6 +231,7 @@ const EditProduct = () => {
 					.split(",")
 					.map((tag) => tag.trim())
 					.filter((tag) => tag),
+				categorySpecific: formData.categorySpecific,
 			};
 
 			await axios.put(`/api/products/${id}`, submitData);
@@ -382,8 +490,253 @@ const EditProduct = () => {
 									"Separate tags with commas (e.g., vintage, electronics, gaming)"}
 							</small>
 						</div>
+					</div>
 
-						{/* Current Images */}
+					{/* Real Estate Specific Fields */}
+					{formData.categoryType === "realEstate" && (
+						<div className="form-section">
+							<h2>{t("createProduct.realEstate.title") || "Property Details"}</h2>
+
+							<div className="form-row">
+								<div className="form-group">
+									<label htmlFor="categorySpecific.propertyType">
+										{t("createProduct.realEstate.propertyType") || "Property Type"} *
+									</label>
+									<select
+										id="categorySpecific.propertyType"
+										name="categorySpecific.propertyType"
+										value={formData.categorySpecific.propertyType}
+										onChange={handleInputChange}
+										required
+									>
+										<option value="">
+											{t("createProduct.select.propertyType") || "Select Property Type"}
+										</option>
+										<option value="apartment">
+											{t("createProduct.realEstate.propertyType.apartment") || "Apartment"}
+										</option>
+										<option value="house">
+											{t("createProduct.realEstate.propertyType.house") || "House"}
+										</option>
+										<option value="land">
+											{t("createProduct.realEstate.propertyType.land") || "Land"}
+										</option>
+										<option value="commercial">
+											{t("createProduct.realEstate.propertyType.commercial") || "Commercial"}
+										</option>
+									</select>
+								</div>
+
+								<div className="form-group">
+									<label htmlFor="categorySpecific.area">
+										{t("createProduct.realEstate.area") || "Area"} * (m²)
+									</label>
+									<input
+										type="number"
+										id="categorySpecific.area"
+										name="categorySpecific.area"
+										value={formData.categorySpecific.area}
+										onChange={handleInputChange}
+										required
+										min="1"
+										placeholder={t("createProduct.realEstate.area.placeholder") || "Enter area"}
+									/>
+								</div>
+							</div>
+
+							<div className="form-group">
+								<label htmlFor="categorySpecific.address">
+									{t("createProduct.realEstate.address") || "Address"} *
+								</label>
+								<input
+									type="text"
+									id="categorySpecific.address"
+									name="categorySpecific.address"
+									value={formData.categorySpecific.address}
+									onChange={handleInputChange}
+									required
+									placeholder={t("createProduct.realEstate.address.placeholder") || "Enter address"}
+								/>
+							</div>
+
+							{(formData.categorySpecific.propertyType === "apartment" ||
+								formData.categorySpecific.propertyType === "house") && (
+								<div className="form-row">
+									<div className="form-group">
+										<label htmlFor="categorySpecific.bedrooms">
+											{t("createProduct.realEstate.bedrooms") || "Bedrooms"}
+										</label>
+										<select
+											id="categorySpecific.bedrooms"
+											name="categorySpecific.bedrooms"
+											value={formData.categorySpecific.bedrooms}
+											onChange={handleInputChange}
+										>
+											<option value="">
+												{t("createProduct.select.bedrooms") || "Select"}
+											</option>
+											<option value="1">1</option>
+											<option value="2">2</option>
+											<option value="3">3</option>
+											<option value="4">4</option>
+											<option value="5+">5+</option>
+										</select>
+									</div>
+
+									<div className="form-group">
+										<label htmlFor="categorySpecific.bathrooms">
+											{t("createProduct.realEstate.bathrooms") || "Bathrooms"}
+										</label>
+										<select
+											id="categorySpecific.bathrooms"
+											name="categorySpecific.bathrooms"
+											value={formData.categorySpecific.bathrooms}
+											onChange={handleInputChange}
+										>
+											<option value="">
+												{t("createProduct.select.bathrooms") || "Select"}
+											</option>
+											<option value="1">1</option>
+											<option value="2">2</option>
+											<option value="3">3</option>
+											<option value="4+">4+</option>
+										</select>
+									</div>
+								</div>
+							)}
+						</div>
+					)}
+
+					{/* Cars Specific Fields */}
+					{formData.categoryType === "cars" && (
+						<div className="form-section">
+							<h2>{t("createProduct.cars.title") || "Vehicle Details"}</h2>
+
+							<div className="form-row">
+								<div className="form-group">
+									<label htmlFor="categorySpecific.year">
+										{t("createProduct.cars.year") || "Year"} *
+									</label>
+									<input
+										type="number"
+										id="categorySpecific.year"
+										name="categorySpecific.year"
+										value={formData.categorySpecific.year}
+										onChange={handleInputChange}
+										required
+										min="1900"
+										max={new Date().getFullYear() + 1}
+										placeholder={t("createProduct.cars.year.placeholder") || "Enter year"}
+									/>
+								</div>
+
+								<div className="form-group">
+									<label htmlFor="categorySpecific.mileage">
+										{t("createProduct.cars.mileage") || "Mileage"} (km)
+									</label>
+									<input
+										type="number"
+										id="categorySpecific.mileage"
+										name="categorySpecific.mileage"
+										value={formData.categorySpecific.mileage}
+										onChange={handleInputChange}
+										min="0"
+										placeholder={t("createProduct.cars.mileage.placeholder") || "Enter mileage"}
+									/>
+								</div>
+							</div>
+
+							<div className="form-row">
+								<div className="form-group">
+									<label htmlFor="categorySpecific.fuelType">
+										{t("createProduct.cars.fuelType") || "Fuel Type"} *
+									</label>
+									<select
+										id="categorySpecific.fuelType"
+										name="categorySpecific.fuelType"
+										value={formData.categorySpecific.fuelType}
+										onChange={handleInputChange}
+										required
+									>
+										<option value="">{t("createProduct.select.fuelType") || "Select Fuel Type"}</option>
+										<option value="petrol">
+											{t("createProduct.cars.fuelType.petrol") || "Petrol"}
+										</option>
+										<option value="diesel">
+											{t("createProduct.cars.fuelType.diesel") || "Diesel"}
+										</option>
+										<option value="electric">
+											{t("createProduct.cars.fuelType.electric") || "Electric"}
+										</option>
+										<option value="hybrid">
+											{t("createProduct.cars.fuelType.hybrid") || "Hybrid"}
+										</option>
+									</select>
+								</div>
+
+								<div className="form-group">
+									<label htmlFor="categorySpecific.transmission">
+										{t("createProduct.cars.transmission") || "Transmission"} *
+									</label>
+									<select
+										id="categorySpecific.transmission"
+										name="categorySpecific.transmission"
+										value={formData.categorySpecific.transmission}
+										onChange={handleInputChange}
+										required
+									>
+										<option value="">
+											{t("createProduct.select.transmission") || "Select Transmission"}
+										</option>
+										<option value="manual">
+											{t("createProduct.cars.transmission.manual") || "Manual"}
+										</option>
+										<option value="automatic">
+											{t("createProduct.cars.transmission.automatic") || "Automatic"}
+										</option>
+									</select>
+								</div>
+							</div>
+
+							<div className="form-group">
+								<label htmlFor="categorySpecific.color">
+									{t("createProduct.cars.color") || "Color"}
+								</label>
+								<input
+									type="text"
+									id="categorySpecific.color"
+									name="categorySpecific.color"
+									value={formData.categorySpecific.color}
+									onChange={handleInputChange}
+									placeholder={t("createProduct.cars.color.placeholder") || "Enter color"}
+								/>
+							</div>
+						</div>
+					)}
+
+					{/* Images Section */}
+					<div className="form-section">
+						<h2>{t("product.images") || "Images"}</h2>
+
+						<div className="form-group">
+							<label htmlFor="images">
+								{t("product.uploadImages") || "Upload Images"}
+							</label>
+							<input
+								type="file"
+								id="images"
+								multiple
+								accept="image/*"
+								onChange={handleImageChange}
+								disabled={uploadingImages}
+							/>
+							<small>
+								{uploadingImages
+									? t("product.uploading") || "Uploading images..."
+									: t("product.uploadHelp") || "You can upload multiple images"}
+							</small>
+						</div>
+
 						{formData.images.length > 0 && (
 							<div className="form-group">
 								<label>{t("product.currentImages") || "Current Images"}</label>
