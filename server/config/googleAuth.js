@@ -1,6 +1,8 @@
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const crypto = require("crypto");
 const User = require("../models/User");
+const { sendVerificationEmail } = require("../services/emailService");
 
 // Configure Google OAuth Strategy (only if credentials are available)
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
@@ -49,19 +51,31 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 						return done(null, user);
 					}
 
-					// Create new user
+					// Create new user (require email verification for receiving mails etc.)
+					const emailVerificationToken = crypto.randomBytes(32).toString("hex");
+					const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 					const newUser = new User({
 						googleId: profile.id,
 						name: profile.displayName,
 						email: profile.emails[0].value,
 						avatar: profile.photos[0]?.value || "",
-						verified: true, // Google emails are pre-verified
+						isVerified: false,
 						isActive: true,
-						joinDate: new Date(),
+						joinedDate: new Date(),
 						lastLogin: new Date(),
+						emailVerificationToken,
+						emailVerificationExpires,
 					});
 
 					await newUser.save();
+
+					// Send verification email (non-blocking)
+					const baseUrl = process.env.SERVER_URL || "http://localhost:5000";
+					const verificationUrl = `${baseUrl}/api/auth/verify-email?token=${emailVerificationToken}`;
+					sendVerificationEmail(newUser.email, newUser.name, verificationUrl).catch((err) =>
+						console.error("Failed to send verification email:", err)
+					);
+
 					return done(null, newUser);
 				} catch (error) {
 					return done(error, null);

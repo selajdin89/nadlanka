@@ -764,6 +764,14 @@ const translations = {
 		"auth.google.signIn": "Sign in with Google",
 		"auth.google.signUp": "Sign up with Google",
 		"auth.google.continue": "Continue with Google",
+		"auth.verifyEmail.checkInbox": "Please check your email to verify your account",
+		"auth.verifyEmail.title": "Verify your email",
+		"auth.verifyEmail.success": "Your email has been verified. You can now receive notifications.",
+		"auth.verifyEmail.invalid": "This verification link is invalid or has expired.",
+		"auth.verifyEmail.resend": "Resend verification email",
+		"auth.verifyEmail.resendSent": "Verification email sent",
+		"auth.verifyEmail.banner": "Verify your email to receive notifications and messages.",
+		"auth.verifyEmail.goHome": "Go to home",
 
 		// Profile
 		"profile.addProduct": "Add Ad",
@@ -1550,6 +1558,14 @@ const translations = {
 		"auth.google.signIn": "Hyni me Google",
 		"auth.google.signUp": "Regjistrohuni me Google",
 		"auth.google.continue": "Vazhdoni me Google",
+		"auth.verifyEmail.checkInbox": "Ju lutemi kontrolloni email-in tuaj për të verifikuar llogarinë",
+		"auth.verifyEmail.title": "Verifikoni email-in tuaj",
+		"auth.verifyEmail.success": "Email-i juaj është verifikuar. Tani mund të merrni njoftime.",
+		"auth.verifyEmail.invalid": "Ky link verifikimi është i pavlefshëm ose ka skaduar.",
+		"auth.verifyEmail.resend": "Dërgoni përsëri email verifikimi",
+		"auth.verifyEmail.resendSent": "Email verifikimi u dërgua",
+		"auth.verifyEmail.banner": "Verifikoni email-in tuaj për të marrë njoftime dhe mesazhe.",
+		"auth.verifyEmail.goHome": "Shkoni në faqen kryesore",
 
 		// Profile
 		"profile.addProduct": "Shto Oglas",
@@ -2360,6 +2376,14 @@ const translations = {
 		"auth.google.signIn": "Најави се со Google",
 		"auth.google.signUp": "Регистрирај се со Google",
 		"auth.google.continue": "Продолжи со Google",
+		"auth.verifyEmail.checkInbox": "Проверете ја вашата е-пошта за да ја потврдите сметката",
+		"auth.verifyEmail.title": "Потврдете ја вашата е-пошта",
+		"auth.verifyEmail.success": "Вашата е-пошта е потврдена. Сега можете да добивате известувања.",
+		"auth.verifyEmail.invalid": "Оваа врска за верификација е неважечка или истечена.",
+		"auth.verifyEmail.resend": "Испрати повторно е-пошта за верификација",
+		"auth.verifyEmail.resendSent": "Е-пошта за верификација е испратена",
+		"auth.verifyEmail.banner": "Потврдете ја е-поштата за да добивате известувања и пораки.",
+		"auth.verifyEmail.goHome": "Кон почетна",
 
 		// Profile
 		"profile.addProduct": "Додај оглас",

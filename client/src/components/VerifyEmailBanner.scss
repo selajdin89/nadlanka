@@ -1,0 +1,47 @@
+.verify-email-banner {
+	background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+	border-bottom: 1px solid #bae6fd;
+	padding: 0.6rem 1rem;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 0.75rem;
+	text-align: center;
+
+	&__text {
+		margin: 0;
+		font-size: 0.9rem;
+		color: #0c4a6e;
+	}
+
+	&__actions {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	&__resend {
+		padding: 0.35rem 0.75rem;
+		background: #0369a1;
+		color: #fff;
+		border: none;
+		border-radius: 6px;
+		font-size: 0.85rem;
+		cursor: pointer;
+		&:disabled {
+			opacity: 0.8;
+			cursor: default;
+		}
+	}
+
+	&__link {
+		color: #0369a1;
+		font-size: 0.85rem;
+		font-weight: 500;
+		text-decoration: none;
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+}

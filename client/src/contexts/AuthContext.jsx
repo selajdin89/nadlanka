@@ -103,14 +103,14 @@ export const AuthProvider = ({ children }) => {
 		try {
 			const response = await axios.post("/api/auth/register", userData);
 
-			const { user: newUser, token: authToken } = response.data;
+			const { user: newUser, token: authToken, message } = response.data;
 
 			localStorage.setItem("token", authToken);
 			setToken(authToken);
 			setUser({ ...newUser, token: authToken });
 			axios.defaults.headers.common["Authorization"] = `Bearer ${authToken}`;
 
-			return { success: true, user: newUser };
+			return { success: true, user: newUser, message };
 		} catch (error) {
 			console.error("Registration error:", error);
 			return {
@@ -157,6 +157,30 @@ export const AuthProvider = ({ children }) => {
 		}
 	};
 
+	const resendVerification = async () => {
+		try {
+			await axios.post("/api/auth/resend-verification");
+			return { success: true };
+		} catch (error) {
+			console.error("Resend verification error:", error);
+			return {
+				success: false,
+				error: error.response?.data?.error || "Failed to resend",
+			};
+		}
+	};
+
+	const refreshUser = async () => {
+		if (!token) return;
+		try {
+			const response = await axios.get("/api/auth/me");
+			setUser({ ...response.data, token });
+			return response.data;
+		} catch (error) {
+			console.error("Refresh user failed:", error);
+		}
+	};
+
 	const value = {
 		user,
 		token,
@@ -166,6 +190,8 @@ export const AuthProvider = ({ children }) => {
 		logout,
 		updateProfile,
 		changePassword,
+		resendVerification,
+		refreshUser,
 		isAuthenticated: !!user,
 	};
 

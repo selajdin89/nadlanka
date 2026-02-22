@@ -20,7 +20,9 @@ import Messages from "./pages/Messages";
 import Chat from "./pages/Chat";
 import Login from "./components/Login";
 import Register from "./components/Register";
+import VerifyEmail from "./pages/VerifyEmail";
 import AdminDashboard from "./pages/AdminDashboard";
+import VerifyEmailBanner from "./components/VerifyEmailBanner";
 
 function App() {
 	const [isFavoritesSidebarOpen, setIsFavoritesSidebarOpen] = useState(false);
@@ -37,6 +39,7 @@ function App() {
 						<Router>
 							<div className="app-container">
 								<Header onToggleFavorites={toggleFavoritesSidebar} />
+								<VerifyEmailBanner />
 								<main className="main-content">
 									<Routes>
 										<Route path="/" element={<Home />} />

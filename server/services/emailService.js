@@ -202,7 +202,45 @@ The seller will receive your message and should reply soon.
 	}
 };
 
+// Send email verification link to user
+const sendVerificationEmail = async (toEmail, userName, verificationUrl) => {
+	try {
+		const transporter = createTransporter();
+		const mailOptions = {
+			from: `"NaDlanka Marketplace" <${
+				process.env.EMAIL_FROM || "noreply@nadlanka.com"
+			}>`,
+			to: toEmail,
+			subject: "Verify your email - NaDlanka Marketplace",
+			html: `
+				<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+					<div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+						<h2 style="color: #0369a1; margin: 0 0 10px 0;">Verify your email</h2>
+						<p style="color: #0c4a6e; margin: 0;">Hi ${userName}, please confirm your email to use your NaDlanka account.</p>
+					</div>
+					<div style="background: white; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 20px;">
+						<p style="margin: 0 0 15px 0;">Click the button below to verify your email address:</p>
+						<a href="${verificationUrl}" style="display: inline-block; background: #166534; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Verify email</a>
+						<p style="margin: 15px 0 0 0; font-size: 14px; color: #64748b;">Or copy this link: ${verificationUrl}</p>
+					</div>
+					<div style="text-align: center; padding: 20px; background: #f8fafc; border-radius: 8px;">
+						<p style="margin: 0; color: #64748b; font-size: 14px;">This link expires in 24 hours. If you didn't create an account, you can ignore this email.</p>
+					</div>
+				</div>
+			`,
+			text: `Verify your email - NaDlanka\n\nHi ${userName},\n\nPlease open this link to verify your email:\n${verificationUrl}\n\nThis link expires in 24 hours.`,
+		};
+		const info = await transporter.sendMail(mailOptions);
+		console.log("Verification email sent:", info.messageId);
+		return info;
+	} catch (error) {
+		console.error("Error sending verification email:", error);
+		throw error;
+	}
+};
+
 module.exports = {
 	sendMessageNotificationEmail,
 	sendMessageConfirmationEmail,
+	sendVerificationEmail,
 };

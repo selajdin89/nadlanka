@@ -1,0 +1,74 @@
+.verify-email-page {
+	min-height: 60vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+}
+
+.verify-email-card {
+	max-width: 420px;
+	width: 100%;
+	background: var(--card-bg, #fff);
+	border-radius: 12px;
+	padding: 2rem;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+	border: 1px solid var(--border-color, #e2e8f0);
+
+	h1 {
+		margin: 0 0 1.5rem 0;
+		font-size: 1.5rem;
+		color: var(--text-primary, #1e293b);
+		text-align: center;
+	}
+}
+
+.verify-email-success {
+	text-align: center;
+	p {
+		color: var(--text-secondary, #475569);
+		margin-bottom: 1rem;
+	}
+}
+
+.verify-email-error,
+.verify-email-pending {
+	text-align: center;
+	p {
+		color: var(--text-secondary, #475569);
+		margin-bottom: 1rem;
+	}
+}
+
+.verify-email-resend {
+	display: inline-block;
+	margin: 0.5rem 0 1rem;
+	padding: 0.5rem 1rem;
+	background: var(--primary, #166534);
+	color: #fff;
+	border: none;
+	border-radius: 8px;
+	cursor: pointer;
+	font-size: 0.95rem;
+	&:disabled {
+		opacity: 0.7;
+		cursor: not-allowed;
+	}
+}
+
+.verify-email-resend-msg {
+	font-size: 0.9rem;
+	color: var(--primary, #166534) !important;
+	margin-top: 0.25rem !important;
+}
+
+.verify-email-link {
+	display: inline-block;
+	margin-top: 1rem;
+	color: var(--primary, #166534);
+	text-decoration: none;
+	font-weight: 500;
+	&:hover {
+		text-decoration: underline;
+	}
+}

@@ -57,7 +57,8 @@ const Register = () => {
 		});
 
 		if (result.success) {
-			navigate("/");
+			setError("");
+			navigate("/", { state: { message: result.message || t("auth.verifyEmail.checkInbox") } });
 		} else {
 			setError(result.error);
 		}
