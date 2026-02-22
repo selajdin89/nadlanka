@@ -55,6 +55,11 @@ const userSchema = new mongoose.Schema(
 			type: Boolean,
 			default: false,
 		},
+		role: {
+			type: String,
+			enum: ["user", "admin", "moderator"],
+			default: "user",
+		},
 		isActive: {
 			type: Boolean,
 			default: true,
@@ -85,6 +90,10 @@ const userSchema = new mongoose.Schema(
 				type: String,
 				default: "en",
 				enum: ["en", "al", "mk"],
+			},
+			acceptsWhatsApp: {
+				type: Boolean,
+				default: true, // Default to true - users can opt out if they want
 			},
 		},
 		stats: {

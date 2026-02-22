@@ -190,7 +190,7 @@ const sampleProducts = [
 		description:
 			"Well-maintained VW Golf, 1.6 TDI engine, 85,000 km. Regular service history, new tires. Great fuel economy.",
 		price: 8500,
-		category: "Cars",
+		category: "Vehicles",
 		condition: "Good",
 		location: "Skopje, North Macedonia",
 		images: ["https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=500"],
@@ -201,7 +201,7 @@ const sampleProducts = [
 		description:
 			"Luxury sedan in excellent condition. 2.0L turbo engine, automatic transmission, leather seats, navigation system.",
 		price: 18500,
-		category: "Cars",
+		category: "Vehicles",
 		condition: "Very Good",
 		location: "Skopje, North Macedonia",
 		images: ["https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500"],
@@ -212,7 +212,7 @@ const sampleProducts = [
 		description:
 			"Reliable and economical car. 1.4L engine, manual transmission, 95,000 km. Perfect for daily commuting.",
 		price: 7200,
-		category: "Cars",
+		category: "Vehicles",
 		condition: "Good",
 		location: "Bitola, North Macedonia",
 		images: [

@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
+import { macedonianCities } from "../utils/macedonianCities";
+import CustomSelect from "./CustomSelect";
 import "./Register.scss";
 
 const Register = () => {
@@ -114,13 +116,17 @@ const Register = () => {
 
 					<div className="form-group">
 						<label htmlFor="location">{t("auth.location")}</label>
-						<input
-							type="text"
+						<CustomSelect
 							id="location"
 							name="location"
 							value={formData.location}
 							onChange={handleChange}
-							placeholder={t("auth.locationPlaceholder")}
+							placeholder={t("auth.locationPlaceholder") || "Изберете локација"}
+							searchable={true}
+							options={macedonianCities.slice(1).map((city) => ({
+								value: city.value,
+								label: city.label,
+							}))}
 						/>
 					</div>
 

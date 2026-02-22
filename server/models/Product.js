@@ -15,7 +15,7 @@ const productSchema = new mongoose.Schema(
 		},
 		price: {
 			type: Number,
-			required: true,
+			required: false,
 			min: 0,
 			max: 1000000,
 		},
@@ -30,7 +30,7 @@ const productSchema = new mongoose.Schema(
 			enum: [
 				"Electronics",
 				"Furniture",
-				"Cars",
+				"Vehicles",
 				"Real Estate",
 				"Fashion",
 				"Books",
@@ -48,7 +48,7 @@ const productSchema = new mongoose.Schema(
 		condition: {
 			type: String,
 			required: true,
-			enum: ["New", "Like New", "Very Good", "Good", "Fair", "Poor"],
+			enum: ["New", "Used", "new", "old", "renovated", "underConstruction"],
 		},
 		brand: {
 			type: String,
@@ -70,6 +70,11 @@ const productSchema = new mongoose.Schema(
 			required: true,
 			trim: true,
 			maxlength: 200,
+		},
+		region: {
+			type: String,
+			trim: true,
+			maxlength: 100,
 		},
 		coordinates: {
 			latitude: {
@@ -158,6 +163,10 @@ const productSchema = new mongoose.Schema(
 				enum: ["petrol", "diesel", "electric", "hybrid"],
 			},
 			mileage: {
+				type: Number,
+				min: 0,
+			},
+			powerKW: {
 				type: Number,
 				min: 0,
 			},
@@ -302,15 +311,46 @@ productSchema.statics.getRecent = function (limit = 20) {
 		.limit(limit);
 };
 
-// Pre-save middleware to set coordinates if location is provided
+// Define valid subcategories for each category (must match backend)
+const categorySubcategories = {
+	Electronics: ["smartphones", "laptops", "tablets", "headphones", "gaming"],
+	Furniture: ["livingRoom", "bedroom", "kitchen", "office", "outdoor"],
+	Vehicles: ["cars", "motorcycles", "trucks", "parts", "accessories"],
+	"Real Estate": ["apartments", "houses", "commercial", "land", "rentals"],
+	Fashion: ["mens", "womens", "kids", "shoes", "accessories"],
+	Books: ["textbooks", "novels", "childrens", "academic", "language"],
+	Sports: ["fitness", "outdoor", "teamSports", "waterSports", "winterSports"],
+	"Home & Garden": ["appliances", "gardenTools", "kitchen", "bathroom", "diy"],
+	Services: ["photography", "tutoring", "cleaning", "repair", "delivery"],
+	Other: [], // Other category has no subcategories
+};
+
+// Pre-save middleware to validate and default category/subcategory
 productSchema.pre("save", function (next) {
+	// Default category to "Other" if missing or invalid
+	if (!this.category || !["Electronics", "Furniture", "Vehicles", "Real Estate", "Fashion", "Books", "Sports", "Home & Garden", "Services", "Other"].includes(this.category)) {
+		this.category = "Other";
+	}
+
+	// If category is "Other", clear subcategory (Other has no subcategories)
+	if (this.category === "Other") {
+		this.subcategory = undefined;
+	} else if (this.subcategory) {
+		// Validate subcategory matches category
+		const validSubcategories = categorySubcategories[this.category] || [];
+		if (validSubcategories.length > 0 && !validSubcategories.includes(this.subcategory)) {
+			// If subcategory doesn't match, clear it
+			this.subcategory = undefined;
+		}
+	}
+
+	// Set coordinates if location is provided (simplified version)
 	if (this.isModified("location") && this.location) {
 		// This is a simplified version - in production you'd use a geocoding service
 		// For now, we'll just store the location text
-		next();
-	} else {
-		next();
 	}
+
+	next();
 });
 
 module.exports = mongoose.model("Product", productSchema);

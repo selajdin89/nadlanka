@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { MessageCircle, X } from "lucide-react";
+import { MessageSquare, X } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useSocket } from "../contexts/SocketContext";
@@ -22,6 +22,7 @@ const FloatingInbox = () => {
 	const [unreadCount, setUnreadCount] = useState(0);
 	const [selectedChat, setSelectedChat] = useState(null);
 	const [showChatList, setShowChatList] = useState(true);
+	const [refreshTrigger, setRefreshTrigger] = useState(0);
 
 	// Fetch unread count and request notification permission
 	useEffect(() => {
@@ -152,6 +153,8 @@ const FloatingInbox = () => {
 		setSelectedChat(null);
 		setShowChatList(true);
 		clearActiveChat();
+		// Trigger chat list refresh
+		setRefreshTrigger(prev => prev + 1);
 	};
 
 	const handleClose = () => {
@@ -174,7 +177,7 @@ const FloatingInbox = () => {
 					onClick={handleInboxClick}
 					title={t("chat.title") || "Messages"}
 				>
-					<MessageCircle size={24} />
+					<MessageSquare size={24} />
 					{unreadCount > 0 && (
 						<span className="unread-badge">
 							{unreadCount > 99 ? "99+" : unreadCount}
@@ -200,12 +203,17 @@ const FloatingInbox = () => {
 									// Could implement new chat creation here
 								}}
 								onUnreadCountChange={fetchUnreadCount}
+								refreshTrigger={refreshTrigger}
 							/>
 						) : (
 							<ChatRoom
 								chat={selectedChat}
 								onClose={handleBackToList}
 								onMessagesRead={fetchUnreadCount}
+								onChatDeleted={() => {
+									// Trigger chat list refresh when chat is deleted
+									setRefreshTrigger(prev => prev + 1);
+								}}
 							/>
 						)}
 					</div>

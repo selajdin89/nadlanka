@@ -1,12 +1,16 @@
 // Color Variables - Clean White Theme with Green Accent
 $primary-color: #ffffff;
 $secondary-color: #f8f9fa;
-$accent-color: #10b981; // Emerald green
-$accent-highlight: #059669; // Darker emerald for hover states
+$accent-color: #679267; // Primary green
+$accent-hover: #557A58; // Hover state
+$accent-active: #486A4B; // Active/Pressed state
+$accent-highlight: #557A58; // Hover (alias for compatibility)
+$accent-light: #E8F0EA; // Light background
+$accent-subtle: #F2F7F3; // Subtle background
 $text-light: #ffffff;
-$text-dark: #2c3e50;
-$text-secondary: #6c757d;
-$text-muted: #adb5bd;
+$text-dark: #111827; // Primary text
+$text-secondary: #4B5563; // Secondary text
+$text-muted: #6B7280; // Muted text
 
 // Background Variables
 $bg-overlay: rgba(0, 0, 0, 0.1);

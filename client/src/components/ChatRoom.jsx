@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from "react";
 import { useSocket } from "../contexts/SocketContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
-import { Send, ArrowLeft, Phone, Video, MoreVertical } from "lucide-react";
+import { Send, ArrowLeft, MoreVertical } from "lucide-react";
+import API_BASE_URL from "../config/api";
 import "./ChatRoom.scss";
 
-const ChatRoom = ({ chat, onClose, onMessagesRead }) => {
+const ChatRoom = ({ chat, onClose, onMessagesRead, onChatDeleted }) => {
 	const { socket } = useSocket();
 	const { user } = useAuth();
 	const { t } = useLanguage();
@@ -13,8 +14,10 @@ const ChatRoom = ({ chat, onClose, onMessagesRead }) => {
 	const [newMessage, setNewMessage] = useState("");
 	const [loading, setLoading] = useState(true);
 	const [typingUsers, setTypingUsers] = useState([]);
+	const [showMenu, setShowMenu] = useState(false);
 	const messagesEndRef = useRef(null);
 	const typingTimeoutRef = useRef(null);
+	const menuRef = useRef(null);
 
 	// Scroll to bottom of messages
 	const scrollToBottom = () => {
@@ -88,6 +91,23 @@ const ChatRoom = ({ chat, onClose, onMessagesRead }) => {
 	useEffect(() => {
 		scrollToBottom();
 	}, [messages]);
+
+	// Close menu when clicking outside
+	useEffect(() => {
+		const handleClickOutside = (event) => {
+			if (menuRef.current && !menuRef.current.contains(event.target)) {
+				setShowMenu(false);
+			}
+		};
+
+		if (showMenu) {
+			document.addEventListener("mousedown", handleClickOutside);
+		}
+
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, [showMenu]);
 
 	const loadMessages = async () => {
 		try {
@@ -190,6 +210,44 @@ const ChatRoom = ({ chat, onClose, onMessagesRead }) => {
 
 	const otherParticipant = getOtherParticipant();
 
+	const handleViewProduct = () => {
+		if (chat?.product?._id) {
+			window.open(`/products/${chat.product._id}`, "_blank");
+		}
+		setShowMenu(false);
+	};
+
+	const handleDeleteChat = async () => {
+		if (!window.confirm(t("chat.deleteConfirm") || "Are you sure you want to delete this chat? This action cannot be undone.")) {
+			setShowMenu(false);
+			return;
+		}
+
+		try {
+			const response = await fetch(`${API_BASE_URL}/api/chat/${chat._id}`, {
+				method: "DELETE",
+				headers: {
+					Authorization: `Bearer ${user.token}`,
+					"Content-Type": "application/json",
+				},
+			});
+
+			if (response.ok) {
+				// Notify parent that chat was deleted
+				if (onChatDeleted) {
+					onChatDeleted();
+				}
+				onClose();
+			} else {
+				alert(t("chat.deleteError") || "Failed to delete chat. Please try again.");
+			}
+		} catch (error) {
+			console.error("Error deleting chat:", error);
+			alert(t("chat.deleteError") || "Failed to delete chat. Please try again.");
+		}
+		setShowMenu(false);
+	};
+
 	if (!chat) {
 		return (
 			<div className="chat-room">
@@ -222,16 +280,31 @@ const ChatRoom = ({ chat, onClose, onMessagesRead }) => {
 						</div>
 					</div>
 				</div>
-				<div className="chat-header-actions">
-					<button className="action-btn">
-						<Phone size={20} />
-					</button>
-					<button className="action-btn">
-						<Video size={20} />
-					</button>
-					<button className="action-btn">
+				<div className="chat-header-actions" ref={menuRef}>
+					<button
+						className="action-btn"
+						onClick={() => setShowMenu(!showMenu)}
+					>
 						<MoreVertical size={20} />
 					</button>
+					{showMenu && (
+						<div className="chat-menu-dropdown">
+							{chat?.product?._id && (
+								<button
+									className="menu-item"
+									onClick={handleViewProduct}
+								>
+									{t("chat.menu.viewProduct") || "View Product"}
+								</button>
+							)}
+							<button
+								className="menu-item"
+								onClick={handleDeleteChat}
+							>
+								{t("chat.menu.deleteChat") || "Delete Chat"}
+							</button>
+						</div>
+					)}
 				</div>
 			</div>
 
@@ -258,9 +331,9 @@ const ChatRoom = ({ chat, onClose, onMessagesRead }) => {
 							return (
 								<div key={message._id}>
 									{showDate && (
-										<div className="date-separator">
-											{formatDate(message.createdAt)}
-										</div>
+									<div className="date-separator">
+										<span>{formatDate(message.createdAt)}</span>
+									</div>
 									)}
 									<div className={`message ${isOwn ? "own" : "other"}`}>
 										{!isOwn && showAvatar && (

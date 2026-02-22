@@ -112,6 +112,7 @@ a {
 }
 
 @import "./styles/shared.scss";
+@import "./styles/variables.scss";
 @import "./App.scss";
 @import "./components/Header.scss";
 @import "./components/LanguageSwitcher.scss";
@@ -133,5 +134,6 @@ a {
 @import "./components/FloatingInbox.scss";
 @import "./components/ChatRoom.scss";
 @import "./components/ChatList.scss";
+@import "./components/CustomSelect.scss";
 @import "./pages/Messages.scss";
 @import "./pages/Chat.scss";

@@ -313,6 +313,38 @@ const optionalAuth = (req, res, next) => {
 	);
 };
 
+// Admin authentication middleware
+const authenticateAdmin = async (req, res, next) => {
+	try {
+		const authHeader = req.headers["authorization"];
+		const token = authHeader && authHeader.split(" ")[1];
+
+		if (!token) {
+			return res.status(401).json({ error: "Access token required" });
+		}
+
+		const decoded = jwt.verify(
+			token,
+			process.env.JWT_SECRET || "nadlanka_secret_key"
+		);
+
+		const user = await User.findById(decoded.userId);
+		if (!user) {
+			return res.status(401).json({ error: "User not found" });
+		}
+
+		if (user.role !== "admin" && user.role !== "moderator") {
+			return res.status(403).json({ error: "Admin access required" });
+		}
+
+		req.user = decoded;
+		req.user.role = user.role;
+		next();
+	} catch (error) {
+		return res.status(403).json({ error: "Invalid or expired token" });
+	}
+};
+
 // Middleware
 app.use(
 	helmet({
@@ -612,7 +644,7 @@ app.post("/api/auth/login", async (req, res) => {
 				_id: user._id,
 				name: user.name,
 				email: user.email,
-				role: user.role,
+				role: user.role || "user",
 				phone: user.phone,
 				location: user.location,
 				avatar: user.avatar,
@@ -820,6 +852,188 @@ app.post("/api/upload", upload.array("images", 10), async (req, res) => {
 
 // ===== PRODUCT ROUTES =====
 
+// Helper function to convert category slug to category name
+const slugToCategoryName = (slug) => {
+	const slugMap = {
+		electronics: "Electronics",
+		furniture: "Furniture",
+		cars: "Cars",
+		"real-estate": "Real Estate",
+		fashion: "Fashion",
+		books: "Books",
+		sports: "Sports",
+		"home-garden": "Home & Garden",
+		services: "Services",
+		other: "Other",
+	};
+	return slugMap[slug.toLowerCase()] || slug;
+};
+
+// Convert Latin location name to Cyrillic
+const convertLocationToCyrillic = (location) => {
+	if (!location) return location;
+	
+	const lower = location.toLowerCase().trim();
+	
+	// Map of Latin city names to Cyrillic equivalents
+	const latinToCyrillicMap = {
+		'skopje': 'Скопје',
+		'bitola': 'Битола',
+		'kumanovo': 'Куманово',
+		'prilep': 'Прилеп',
+		'ohrid': 'Охрид',
+		'tetovo': 'Тетово',
+		'veles': 'Велес',
+		'stip': 'Штип',
+		'struga': 'Струга',
+		'kavadarci': 'Кавадарци',
+		'kicevo': 'Кичево',
+		'kochani': 'Кочани',
+		'gevgelija': 'Гевгелија',
+		'debar': 'Дебар',
+		'kriva palanka': 'Крива Паланка',
+		'radovis': 'Радовиш',
+		'resen': 'Ресен',
+		'valandovo': 'Валандово',
+		'berovo': 'Берово',
+		'vinica': 'Виница',
+		'delchevo': 'Делчево',
+		'krusevo': 'Крушево',
+		'negotino': 'Неготино',
+		'makedonski brod': 'Македонски Брод',
+		'sveti nikole': 'Свети Николе',
+		'probshtip': 'Пробиштип',
+		'demir hisar': 'Демир Хисар',
+	};
+	
+	const normalized = latinToCyrillicMap[lower];
+	if (normalized) {
+		return normalized;
+	}
+	
+	// If not found in map, check if it's already Cyrillic (contains Cyrillic characters)
+	const hasCyrillic = /[\u0400-\u04FF]/.test(location);
+	if (hasCyrillic) {
+		return location; // Already Cyrillic, return as-is
+	}
+	
+	// Try transliteration character by character for other locations
+	return transliterateToCyrillic(location);
+};
+
+// Convert Latin text to Cyrillic (basic transliteration)
+const transliterateToCyrillic = (text) => {
+	if (!text) return text;
+	
+	const latinToCyrillic = {
+		'a': 'а', 'b': 'б', 'c': 'ц', 'č': 'ч', 'ć': 'ќ', 'd': 'д', 'đ': 'џ',
+		'e': 'е', 'f': 'ф', 'g': 'г', 'h': 'х', 'i': 'и', 'j': 'ј', 'k': 'к',
+		'l': 'л', 'lj': 'љ', 'm': 'м', 'n': 'н', 'nj': 'њ', 'o': 'о', 'p': 'п',
+		'r': 'р', 's': 'с', 'š': 'ш', 't': 'т', 'u': 'у', 'v': 'в', 'z': 'з', 'ž': 'ж',
+		'A': 'А', 'B': 'Б', 'C': 'Ц', 'Č': 'Ч', 'Ć': 'Ќ', 'D': 'Д', 'Đ': 'Џ',
+		'E': 'Е', 'F': 'Ф', 'G': 'Г', 'H': 'Х', 'I': 'И', 'J': 'Ј', 'K': 'К',
+		'L': 'Л', 'Lj': 'Љ', 'M': 'М', 'N': 'Н', 'Nj': 'Њ', 'O': 'О', 'P': 'П',
+		'R': 'Р', 'S': 'С', 'Š': 'Ш', 'T': 'Т', 'U': 'У', 'V': 'В', 'Z': 'З', 'Ž': 'Ж',
+	};
+	
+	let result = text;
+	// Handle multi-character sequences first
+	result = result.replace(/lj/g, 'љ').replace(/Lj/g, 'Љ').replace(/LJ/g, 'Љ');
+	result = result.replace(/nj/g, 'њ').replace(/Nj/g, 'Њ').replace(/NJ/g, 'Њ');
+	result = result.replace(/dz/g, 'џ').replace(/Dz/g, 'Џ').replace(/DZ/g, 'Џ');
+	
+	// Handle single characters
+	for (const [lat, cyr] of Object.entries(latinToCyrillic)) {
+		result = result.replace(new RegExp(lat, 'g'), cyr);
+	}
+	
+	return result;
+};
+
+// Normalize location to handle both Cyrillic and Latin characters for filtering
+// Returns an array of possible location variants to match against
+const normalizeLocationForSearch = (location) => {
+	if (!location) return [];
+	
+	const variants = new Set([location]); // Always include the original
+	
+	// Convert to lowercase for normalization
+	const lower = location.toLowerCase();
+	
+	// Map Cyrillic characters to their Latin equivalents (Macedonian alphabet)
+	// Process multi-character mappings first (џ, ќ, ч, ж, ш)
+	let normalized = lower
+		.replace(/џ/g, 'dz')
+		.replace(/ќ/g, 'kj')
+		.replace(/ч/g, 'ch')
+		.replace(/ж/g, 'zh')
+		.replace(/ш/g, 'sh')
+		.replace(/а/g, 'a')
+		.replace(/б/g, 'b')
+		.replace(/в/g, 'v')
+		.replace(/г/g, 'g')
+		.replace(/д/g, 'd')
+		.replace(/е/g, 'e')
+		.replace(/з/g, 'z')
+		.replace(/и/g, 'i')
+		.replace(/ј/g, 'j')
+		.replace(/к/g, 'k')
+		.replace(/л/g, 'l')
+		.replace(/м/g, 'm')
+		.replace(/н/g, 'n')
+		.replace(/о/g, 'o')
+		.replace(/п/g, 'p')
+		.replace(/р/g, 'r')
+		.replace(/с/g, 's')
+		.replace(/т/g, 't')
+		.replace(/у/g, 'u')
+		.replace(/ф/g, 'f')
+		.replace(/х/g, 'h')
+		.replace(/ц/g, 'c');
+	
+	// Add normalized version if different from original
+	if (normalized !== lower) {
+		variants.add(normalized);
+		// Also add with first letter capitalized
+		if (normalized.length > 0) {
+			variants.add(normalized.charAt(0).toUpperCase() + normalized.slice(1));
+		}
+	}
+	
+	// Also try reverse: if input is Latin, add Cyrillic variant
+	const latinToCyrillic = {
+		'skopje': 'скопје',
+		'bitola': 'битола',
+		'kumanovo': 'куманово',
+		'prilep': 'прилеп',
+		'ohrid': 'охрид',
+		'tetovo': 'тетово',
+		'veles': 'велес',
+		'stip': 'штип',
+		'struga': 'струга',
+		'kavadarci': 'кавадарци',
+		'kicevo': 'кичево',
+		'kochani': 'кочани',
+		'gevgelija': 'гевгелија',
+		'debar': 'дебар',
+		'kriva-palanka': 'крива паланка',
+		'radovis': 'радовиш',
+		'resen': 'ресен',
+		'valandovo': 'валандово',
+		'berovo': 'берово',
+		'vinica': 'виница',
+		'delchevo': 'делчево',
+		'krusevo': 'крушево',
+	};
+	
+	const latinKey = normalized;
+	if (latinToCyrillic[latinKey]) {
+		variants.add(latinToCyrillic[latinKey]);
+	}
+	
+	return Array.from(variants);
+};
+
 // Get all products with search and filter
 app.get("/api/products", async (req, res) => {
 	try {
@@ -858,7 +1072,9 @@ app.get("/api/products", async (req, res) => {
 
 		// Filter by category (case-insensitive)
 		if (category) {
-			additionalFilters.category = { $regex: new RegExp(`^${category}$`, "i") };
+			// Convert slug to category name if needed
+			const categoryName = slugToCategoryName(category) || category;
+			additionalFilters.category = { $regex: new RegExp(`^${categoryName}$`, "i") };
 		}
 
 		// Filter by condition
@@ -873,9 +1089,85 @@ app.get("/api/products", async (req, res) => {
 			if (maxPrice) additionalFilters.price.$lte = Number(maxPrice);
 		}
 
-		// Filter by location
+		// Filter by location (handle both Cyrillic and Latin)
 		if (location) {
-			additionalFilters.location = { $regex: location, $options: "i" };
+			const locationVariants = normalizeLocationForSearch(location);
+			// Escape special regex characters and join with | for OR matching
+			const escapedVariants = locationVariants.map(v => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+			additionalFilters.location = { $regex: escapedVariants.join('|'), $options: "i" };
+		}
+
+		// Filter by subcategory (only if category is also specified or we want to filter by subcategory only)
+		if (req.query.subcategory) {
+			// When filtering by subcategory, we need exact match
+			additionalFilters.subcategory = req.query.subcategory;
+			// If category filter is not set but subcategory is, we should still filter
+			// The subcategory filter will work on its own
+		}
+
+		// Vehicle-specific filters
+		if (req.query.brand) {
+			// Escape special regex characters and trim whitespace
+			const escapedBrand = req.query.brand.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+			// Ensure brand exists and matches (case-insensitive)
+			additionalFilters.brand = {
+				$exists: true,
+				$ne: null,
+				$regex: new RegExp(`^${escapedBrand}$`, "i")
+			};
+			console.log(`[DEBUG] Filtering by brand: "${req.query.brand}" -> regex: "^${escapedBrand}$"`);
+		}
+		if (req.query.model) {
+			// Escape special regex characters and trim whitespace
+			const escapedModel = req.query.model.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+			additionalFilters.model = { $regex: new RegExp(`^${escapedModel}$`, "i") };
+		}
+		if (req.query.fuelType) {
+			additionalFilters["categorySpecific.fuelType"] = req.query.fuelType;
+		}
+		if (req.query.transmission) {
+			additionalFilters["categorySpecific.transmission"] = req.query.transmission;
+		}
+		if (req.query.minYear || req.query.maxYear) {
+			additionalFilters.year = {};
+			if (req.query.minYear) additionalFilters.year.$gte = Number(req.query.minYear);
+			if (req.query.maxYear) additionalFilters.year.$lte = Number(req.query.maxYear);
+		}
+		if (req.query.minPowerKW || req.query.maxPowerKW) {
+			additionalFilters["categorySpecific.powerKW"] = {};
+			if (req.query.minPowerKW) additionalFilters["categorySpecific.powerKW"].$gte = Number(req.query.minPowerKW);
+			if (req.query.maxPowerKW) additionalFilters["categorySpecific.powerKW"].$lte = Number(req.query.maxPowerKW);
+		}
+		if (req.query.minMileage || req.query.maxMileage) {
+			additionalFilters["categorySpecific.mileage"] = {};
+			if (req.query.minMileage) additionalFilters["categorySpecific.mileage"].$gte = Number(req.query.minMileage);
+			if (req.query.maxMileage) additionalFilters["categorySpecific.mileage"].$lte = Number(req.query.maxMileage);
+		}
+
+		// Real Estate apartment-specific filters
+		if (req.query.minBedrooms || req.query.maxBedrooms) {
+			additionalFilters["categorySpecific.bedrooms"] = {};
+			if (req.query.minBedrooms) additionalFilters["categorySpecific.bedrooms"].$gte = Number(req.query.minBedrooms);
+			if (req.query.maxBedrooms) additionalFilters["categorySpecific.bedrooms"].$lte = Number(req.query.maxBedrooms);
+		}
+		if (req.query.minArea || req.query.maxArea) {
+			additionalFilters["categorySpecific.area"] = {};
+			if (req.query.minArea) additionalFilters["categorySpecific.area"].$gte = Number(req.query.minArea);
+			if (req.query.maxArea) additionalFilters["categorySpecific.area"].$lte = Number(req.query.maxArea);
+		}
+		if (req.query.minFloor || req.query.maxFloor) {
+			additionalFilters["categorySpecific.floor"] = {};
+			if (req.query.minFloor) additionalFilters["categorySpecific.floor"].$gte = Number(req.query.minFloor);
+			if (req.query.maxFloor) additionalFilters["categorySpecific.floor"].$lte = Number(req.query.maxFloor);
+		}
+		if (req.query.heating) {
+			additionalFilters["categorySpecific.heating"] = req.query.heating;
+		}
+		if (req.query.apartmentType) {
+			additionalFilters["categorySpecific.apartmentType"] = req.query.apartmentType;
+		}
+		if (req.query.equipment) {
+			additionalFilters["categorySpecific.equipment"] = req.query.equipment;
 		}
 
 		// Filter by seller
@@ -896,6 +1188,14 @@ app.get("/api/products", async (req, res) => {
 		// Combine all filters
 		query = { ...query, ...additionalFilters };
 
+		// Debug logging in development
+		if (process.env.NODE_ENV === "development") {
+			console.log(`[DEBUG] Product query:`, JSON.stringify(query, null, 2));
+			if (req.query.brand) {
+				console.log(`[DEBUG] Received brand query param: "${req.query.brand}"`);
+			}
+		}
+
 		// Sorting
 		const sortOptions = {};
 		sortOptions[sortBy] = sortOrder === "desc" ? -1 : 1;
@@ -910,6 +1210,18 @@ app.get("/api/products", async (req, res) => {
 			.limit(Number(limit));
 
 		const total = await Product.countDocuments(query);
+
+		// Debug logging
+		if (process.env.NODE_ENV === "development" && req.query.brand) {
+			console.log(`[DEBUG] Found ${total} products with brand filter`);
+			if (products.length > 0) {
+				console.log(`[DEBUG] Sample product brands:`, products.map(p => ({ id: p._id, brand: p.brand, model: p.model, category: p.category })));
+			} else {
+				console.log(`[DEBUG] No products found. Checking if any products exist with this category...`);
+				const categoryProducts = await Product.find({ category: query.category || additionalFilters.category }).limit(5);
+				console.log(`[DEBUG] Sample products in category (first 5):`, categoryProducts.map(p => ({ id: p._id, brand: p.brand || "NO BRAND", model: p.model || "NO MODEL", category: p.category })));
+			}
+		}
 
 		// Normalize image URLs for all products
 		const normalizedProducts = products.map(normalizeProductImages);
@@ -962,18 +1274,24 @@ app.get("/api/products/:id", async (req, res) => {
 // Create a new product
 app.post("/api/products", authenticateToken, async (req, res) => {
 	try {
-		const {
+		let {
 			title,
 			description,
 			price,
 			currency,
 			category,
+			subcategory,
 			condition,
 			images,
 			location,
+			region,
 			contactInfo,
 			seller,
 			tags,
+			brand,
+			model,
+			year,
+			categorySpecific,
 		} = req.body;
 
 		if (
@@ -990,19 +1308,135 @@ app.post("/api/products", authenticateToken, async (req, res) => {
 			});
 		}
 
+		// Always convert location to Cyrillic
+		location = convertLocationToCyrillic(location);
+		
+		// Convert title to Cyrillic if it contains Latin characters
+		if (title && !/[\u0400-\u04FF]/.test(title)) {
+			title = transliterateToCyrillic(title);
+		}
+		
+		// Convert description to Cyrillic if it contains Latin characters
+		if (description && !/[\u0400-\u04FF]/.test(description)) {
+			description = transliterateToCyrillic(description);
+		}
+
+		// Validate subcategory if provided
+		if (subcategory && category !== "Other") {
+			const subcategoriesMap = {
+				Electronics: ["smartphones", "laptops", "tablets", "headphones", "gaming"],
+				Furniture: ["livingRoom", "bedroom", "kitchen", "office", "outdoor"],
+				Cars: ["cars", "motorcycles", "trucks", "parts", "accessories"],
+				"Real Estate": [
+					"houses-villas",
+					"apartments",
+					"rooms",
+					"weekend-houses",
+					"shops",
+					"business-space",
+					"roommate-room",
+					"garages",
+					"plots-fields",
+					"warehouses",
+					"barracks-kiosks-shops",
+					"new-construction",
+					"abroad",
+					"other",
+				],
+				Fashion: ["mens", "womens", "kids", "shoes", "accessories"],
+				Books: ["textbooks", "novels", "childrens", "academic", "language"],
+				Sports: ["fitness", "outdoor", "teamSports", "waterSports", "winterSports"],
+				"Home & Garden": ["appliances", "gardenTools", "kitchen", "bathroom", "diy"],
+				Services: ["photography", "tutoring", "cleaning", "repair", "delivery"],
+				Other: [],
+			};
+			const validSubcategories = subcategoriesMap[category] || [];
+			if (validSubcategories.length > 0 && !validSubcategories.includes(subcategory)) {
+				return res.status(400).json({
+					error: `Invalid subcategory "${subcategory}" for category "${category}"`,
+				});
+			}
+		}
+
+		// Extract year from categorySpecific if provided there, otherwise use top-level year
+		const productYear = year 
+			? Number(year) 
+			: (categorySpecific && categorySpecific.year) 
+				? Number(categorySpecific.year) 
+				: undefined;
+
+		// Clean categorySpecific to remove empty strings and fields that don't belong to this category
+		const cleanedCategorySpecific = categorySpecific ? { ...categorySpecific } : {};
+		
+		// Remove year if it's there (since year is stored at top level)
+		if (cleanedCategorySpecific.year !== undefined) {
+			delete cleanedCategorySpecific.year;
+		}
+		
+		// Remove empty strings (convert to undefined) - enum fields don't accept empty strings
+		Object.keys(cleanedCategorySpecific).forEach(key => {
+			if (cleanedCategorySpecific[key] === '' || cleanedCategorySpecific[key] === null) {
+				delete cleanedCategorySpecific[key];
+			}
+		});
+		
+		// Only keep fields relevant to the current category
+		if (category === "Vehicles" || category === "Cars") {
+			// For vehicles, only keep: fuelType, mileage, powerKW, transmission, color
+			const vehicleFields = ['fuelType', 'mileage', 'powerKW', 'transmission', 'color'];
+			Object.keys(cleanedCategorySpecific).forEach(key => {
+				if (!vehicleFields.includes(key)) {
+					delete cleanedCategorySpecific[key];
+				}
+			});
+		} else if (category === "Real Estate") {
+			// For Real Estate apartments and rooms, keep: area, bedrooms, floor, heating, apartmentType, equipment, bathrooms, address
+			// For houses-villas and weekend-houses, keep only: area, bedrooms, heating, equipment, bathrooms, address (no floor or apartmentType)
+			// For other Real Estate subcategories, keep: propertyType, area, address, bedrooms, bathrooms
+			let realEstateFields;
+			if (subcategory === "apartments" || subcategory === "rooms") {
+				realEstateFields = ['area', 'bedrooms', 'floor', 'heating', 'apartmentType', 'equipment', 'bathrooms', 'address'];
+			} else if (subcategory === "houses-villas" || subcategory === "weekend-houses") {
+				realEstateFields = ['area', 'bedrooms', 'heating', 'equipment', 'bathrooms', 'address'];
+			} else {
+				realEstateFields = ['propertyType', 'area', 'address', 'bedrooms', 'bathrooms'];
+			}
+			Object.keys(cleanedCategorySpecific).forEach(key => {
+				if (!realEstateFields.includes(key)) {
+					delete cleanedCategorySpecific[key];
+				}
+			});
+		} else {
+			// For other categories, remove all categorySpecific fields (they don't have any)
+			Object.keys(cleanedCategorySpecific).forEach(key => {
+				delete cleanedCategorySpecific[key];
+			});
+		}
+
 		const newProduct = new Product({
 			title,
 			description,
 			price,
 			currency: currency || "MKD",
-			category,
+			category: category || "Other", // Default to Other if missing
+			subcategory: subcategory || undefined, // Optional subcategory
 			condition,
 			images: images || [],
 			location,
+			region: region || undefined, // Optional region (required for Скопје but handled in frontend)
 			contactInfo: contactInfo || {},
 			seller: req.user.userId, // Use authenticated user as seller
 			tags: tags || [],
+			brand: brand ? brand.trim() : undefined,
+			model: model ? model.trim() : undefined,
+			year: productYear,
+			categorySpecific: Object.keys(cleanedCategorySpecific).length > 0 ? cleanedCategorySpecific : undefined,
 		});
+
+		// Debug logging in development
+		if (process.env.NODE_ENV === "development") {
+			console.log(`[DEBUG] Creating product with brand: "${brand ? brand.trim() : 'none'}", model: "${model ? model.trim() : 'none'}"`);
+		}
 
 		const savedProduct = await newProduct.save();
 		const populatedProduct = await Product.findById(savedProduct._id).populate(
@@ -1023,7 +1457,29 @@ app.post("/api/products", authenticateToken, async (req, res) => {
 // Update a product
 app.put("/api/products/:id", authenticateToken, async (req, res) => {
 	try {
-		const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+		// Always convert to Cyrillic
+		let updateData = { ...req.body };
+		
+		// Convert location to Cyrillic if provided
+		if (updateData.location) {
+			updateData.location = convertLocationToCyrillic(updateData.location);
+			// Clear region if location is not Скопје
+			if (updateData.location !== "Скопје") {
+				updateData.region = undefined;
+			}
+		}
+		
+		// Convert title to Cyrillic if provided and contains Latin characters
+		if (updateData.title && !/[\u0400-\u04FF]/.test(updateData.title)) {
+			updateData.title = transliterateToCyrillic(updateData.title);
+		}
+		
+		// Convert description to Cyrillic if provided and contains Latin characters
+		if (updateData.description && !/[\u0400-\u04FF]/.test(updateData.description)) {
+			updateData.description = transliterateToCyrillic(updateData.description);
+		}
+
+		const product = await Product.findByIdAndUpdate(req.params.id, updateData, {
 			new: true,
 			runValidators: true,
 		}).populate("seller", "name email phone location");
@@ -1078,7 +1534,7 @@ app.get("/api/categories", (req, res) => {
 	const categories = [
 		{ value: "Electronics", label: "Electronics" },
 		{ value: "Furniture", label: "Furniture" },
-		{ value: "Cars", label: "Cars" },
+		{ value: "Vehicles", label: "Vehicles" },
 		{ value: "Real Estate", label: "Real Estate" },
 		{ value: "Fashion", label: "Fashion" },
 		{ value: "Books", label: "Books" },
@@ -1088,6 +1544,147 @@ app.get("/api/categories", (req, res) => {
 		{ value: "Other", label: "Other" },
 	];
 	res.json(categories);
+});
+
+// AI Helper for generating products
+const { generateProductContent, generateCompleteProduct } = require("./services/aiHelper");
+
+// Generate complete product from minimal input (category, title, price, condition)
+app.post("/api/products/generate-complete-product", authenticateToken, async (req, res) => {
+	try {
+		const { category, title, price, condition } = req.body;
+
+		if (!category || !title || !price || !condition) {
+			return res.status(400).json({
+				success: false,
+				error: "Category, title, price, and condition are required",
+			});
+		}
+
+		const result = generateCompleteProduct({ category, title, price, condition });
+		res.json(result);
+	} catch (error) {
+		console.error("Error generating complete product:", error);
+		res.status(500).json({
+			success: false,
+			error: "Failed to generate product",
+		});
+	}
+});
+
+// Generate product title and description using AI (for backward compatibility)
+app.post("/api/products/generate-content", authenticateToken, async (req, res) => {
+	try {
+		const formData = req.body;
+		const result = generateProductContent(formData);
+		res.json(result);
+	} catch (error) {
+		console.error("Error generating product content:", error);
+		res.status(500).json({
+			success: false,
+			error: "Failed to generate product content",
+		});
+	}
+});
+
+// Get subcategories for a category
+app.get("/api/categories/:category/subcategories", (req, res) => {
+	let { category } = req.params;
+	// Decode URL-encoded category name (e.g., "Vehicles" or "Real%20Estate")
+	category = decodeURIComponent(category);
+	
+	const subcategoriesMap = {
+		Electronics: [
+			{ key: "smartphones", label: "Smartphones" },
+			{ key: "laptops", label: "Laptops" },
+			{ key: "tablets", label: "Tablets" },
+			{ key: "headphones", label: "Headphones" },
+			{ key: "gaming", label: "Gaming" },
+		],
+		Furniture: [
+			{ key: "livingRoom", label: "Living Room" },
+			{ key: "bedroom", label: "Bedroom" },
+			{ key: "kitchen", label: "Kitchen" },
+			{ key: "office", label: "Office" },
+			{ key: "outdoor", label: "Outdoor" },
+		],
+		Vehicles: [
+			{ key: "cars", label: "Cars" },
+			{ key: "motorcycles", label: "Motorcycles" },
+			{ key: "trucks", label: "Trucks" },
+			{ key: "agricultural-vehicles", label: "Agricultural Vehicles" },
+			{ key: "parts", label: "Parts" },
+			{ key: "accessories", label: "Accessories" },
+		],
+		// Backward compatibility - map old "Cars" to Vehicles
+		Cars: [
+			{ key: "cars", label: "Cars" },
+			{ key: "motorcycles", label: "Motorcycles" },
+			{ key: "trucks", label: "Trucks" },
+			{ key: "agricultural-vehicles", label: "Agricultural Vehicles" },
+			{ key: "parts", label: "Parts" },
+			{ key: "accessories", label: "Accessories" },
+		],
+		"Real Estate": [
+			{ key: "houses-villas", label: "Куќи / Вили" },
+			{ key: "apartments", label: "Станови" },
+			{ key: "rooms", label: "Соби" },
+			{ key: "weekend-houses", label: "Викенд куќи" },
+			{ key: "shops", label: "Дуќани" },
+			{ key: "business-space", label: "Деловен простор" },
+			{ key: "roommate-room", label: "Цимер / ка" },
+			{ key: "garages", label: "Гаражи" },
+			{ key: "plots-fields", label: "Плацеви и Ниви" },
+			{ key: "warehouses", label: "Магацини" },
+			{ key: "barracks-kiosks-shops", label: "Бараки, киосци, трафики" },
+			{ key: "new-construction", label: "Новоградба" },
+			{ key: "abroad", label: "Во странство" },
+			{ key: "other", label: "Останато" },
+		],
+		Fashion: [
+			{ key: "mens", label: "Men's" },
+			{ key: "womens", label: "Women's" },
+			{ key: "kids", label: "Kids" },
+			{ key: "shoes", label: "Shoes" },
+			{ key: "accessories", label: "Accessories" },
+		],
+		Books: [
+			{ key: "textbooks", label: "Textbooks" },
+			{ key: "novels", label: "Novels" },
+			{ key: "childrens", label: "Children's" },
+			{ key: "academic", label: "Academic" },
+			{ key: "language", label: "Language" },
+		],
+		Sports: [
+			{ key: "fitness", label: "Fitness" },
+			{ key: "outdoor", label: "Outdoor" },
+			{ key: "teamSports", label: "Team Sports" },
+			{ key: "waterSports", label: "Water Sports" },
+			{ key: "winterSports", label: "Winter Sports" },
+		],
+		"Home & Garden": [
+			{ key: "appliances", label: "Appliances" },
+			{ key: "gardenTools", label: "Garden Tools" },
+			{ key: "kitchen", label: "Kitchen" },
+			{ key: "bathroom", label: "Bathroom" },
+			{ key: "diy", label: "DIY" },
+		],
+		Services: [
+			{ key: "photography", label: "Photography" },
+			{ key: "tutoring", label: "Tutoring" },
+			{ key: "cleaning", label: "Cleaning" },
+			{ key: "repair", label: "Repair" },
+			{ key: "delivery", label: "Delivery" },
+		],
+		Other: [],
+	};
+
+	const subcategories = subcategoriesMap[category] || [];
+	console.log("Category requested:", category);
+	console.log("Available keys in subcategoriesMap:", Object.keys(subcategoriesMap));
+	console.log("Subcategories found:", subcategories.length);
+	console.log("Subcategories data:", JSON.stringify(subcategories));
+	res.json(subcategories);
 });
 
 // ===== FAVORITES ROUTES =====
@@ -1727,6 +2324,48 @@ app.get("/api/chat/user/:userId", authenticateToken, async (req, res) => {
 	}
 });
 
+// Delete a chat
+app.delete("/api/chat/:chatId", authenticateToken, async (req, res) => {
+	try {
+		const { chatId } = req.params;
+		const userId = req.user.userId;
+
+		const chat = await Chat.findById(chatId);
+
+		if (!chat) {
+			return res.status(404).json({ error: "Chat not found" });
+		}
+
+		// Ensure user is a participant in the chat
+		// Check if user._id (ObjectId) matches userId (string)
+		const isParticipant = chat.participants.some(
+			(p) => {
+				if (!p.user) return false;
+				// Handle both populated (object with _id) and unpopulated (ObjectId) cases
+				const userObjectId = p.user._id ? p.user._id.toString() : p.user.toString();
+				return userObjectId === userId;
+			}
+		);
+
+		if (!isParticipant) {
+			return res.status(403).json({ error: "Access denied" });
+		}
+
+		// Instead of deleting, mark as inactive for the user
+		// This allows the other participant to still see the chat
+		chat.isActive = false;
+		await chat.save();
+
+		// Delete all messages in the chat
+		await ChatMessage.deleteMany({ chat: chatId });
+
+		res.json({ message: "Chat deleted successfully" });
+	} catch (error) {
+		console.error("Error deleting chat:", error);
+		res.status(500).json({ error: "Failed to delete chat" });
+	}
+});
+
 // Get chat messages
 app.get("/api/chat/:chatId/messages", authenticateToken, async (req, res) => {
 	try {
@@ -1784,10 +2423,13 @@ app.get(
 				);
 
 				if (participant) {
+					// Use lastReadAt if available, otherwise use a very old date
+					const lastReadAt = participant.lastReadAt || new Date(0);
+					
 					const unreadCount = await ChatMessage.countDocuments({
 						chat: chat._id,
 						sender: { $ne: new mongoose.Types.ObjectId(userId) },
-						createdAt: { $gt: participant.lastReadAt },
+						createdAt: { $gt: lastReadAt },
 					});
 
 					totalUnread += unreadCount;
@@ -1987,6 +2629,216 @@ app.delete("/api/messages/:messageId", async (req, res) => {
 	} catch (error) {
 		console.error("Error deleting message:", error);
 		res.status(500).json({ error: "Failed to delete message" });
+	}
+});
+
+// ==================== ADMIN ROUTES ====================
+
+// Get admin dashboard stats
+app.get("/api/admin/stats", authenticateAdmin, async (req, res) => {
+	try {
+		const totalUsers = await User.countDocuments();
+		const totalProducts = await Product.countDocuments();
+		const activeProducts = await Product.countDocuments({ status: "active" });
+		const pendingProducts = await Product.countDocuments({ status: "pending" });
+		const totalMessages = await Message.countDocuments();
+		const totalChats = await Chat.countDocuments();
+
+		// Products by category
+		const productsByCategory = await Product.aggregate([
+			{
+				$group: {
+					_id: "$category",
+					count: { $sum: 1 },
+				},
+			},
+			{ $sort: { count: -1 } },
+		]);
+
+		// Recent users (last 7 days)
+		const sevenDaysAgo = new Date();
+		sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+		const recentUsers = await User.countDocuments({
+			createdAt: { $gte: sevenDaysAgo },
+		});
+
+		// Recent products (last 7 days)
+		const recentProducts = await Product.countDocuments({
+			createdAt: { $gte: sevenDaysAgo },
+		});
+
+		res.json({
+			stats: {
+				totalUsers,
+				totalProducts,
+				activeProducts,
+				pendingProducts,
+				totalMessages,
+				totalChats,
+				recentUsers,
+				recentProducts,
+				productsByCategory,
+			},
+		});
+	} catch (error) {
+		console.error("Error fetching admin stats:", error);
+		res.status(500).json({ error: "Failed to fetch admin stats" });
+	}
+});
+
+// Get all products (admin view with pagination)
+app.get("/api/admin/products", authenticateAdmin, async (req, res) => {
+	try {
+		const { page = 1, limit = 20, status, category, search } = req.query;
+		const skip = (Number(page) - 1) * Number(limit);
+
+		const query = {};
+		if (status) query.status = status;
+		if (category) query.category = category;
+		if (search) {
+			query.$or = [
+				{ title: { $regex: search, $options: "i" } },
+				{ description: { $regex: search, $options: "i" } },
+			];
+		}
+
+		const products = await Product.find(query)
+			.populate("seller", "name email")
+			.sort({ createdAt: -1 })
+			.skip(skip)
+			.limit(Number(limit));
+
+		const total = await Product.countDocuments(query);
+
+		// Normalize image URLs
+		const normalizedProducts = products.map(normalizeProductImages);
+
+		res.json({
+			products: normalizedProducts,
+			pagination: {
+				currentPage: Number(page),
+				totalPages: Math.ceil(total / Number(limit)),
+				total,
+				hasNext: skip + products.length < total,
+				hasPrev: Number(page) > 1,
+			},
+		});
+	} catch (error) {
+		console.error("Error fetching admin products:", error);
+		res.status(500).json({ error: "Failed to fetch products" });
+	}
+});
+
+// Update product status (approve/reject)
+app.patch("/api/admin/products/:id/status", authenticateAdmin, async (req, res) => {
+	try {
+		const { id } = req.params;
+		const { status, reason } = req.body;
+
+		if (!["active", "pending", "rejected", "inactive"].includes(status)) {
+			return res.status(400).json({ error: "Invalid status" });
+		}
+
+		const product = await Product.findByIdAndUpdate(
+			id,
+			{ status, ...(reason && { rejectionReason: reason }) },
+			{ new: true }
+		).populate("seller", "name email");
+
+		if (!product) {
+			return res.status(404).json({ error: "Product not found" });
+		}
+
+		const normalizedProduct = normalizeProductImages(product);
+		res.json(normalizedProduct);
+	} catch (error) {
+		console.error("Error updating product status:", error);
+		res.status(500).json({ error: "Failed to update product status" });
+	}
+});
+
+// Get all users (admin view with pagination)
+app.get("/api/admin/users", authenticateAdmin, async (req, res) => {
+	try {
+		const { page = 1, limit = 20, search, role } = req.query;
+		const skip = (Number(page) - 1) * Number(limit);
+
+		const query = {};
+		if (role) query.role = role;
+		if (search) {
+			query.$or = [
+				{ name: { $regex: search, $options: "i" } },
+				{ email: { $regex: search, $options: "i" } },
+			];
+		}
+
+		const users = await User.find(query)
+			.select("-password")
+			.sort({ createdAt: -1 })
+			.skip(skip)
+			.limit(Number(limit));
+
+		const total = await User.countDocuments(query);
+
+		res.json({
+			users,
+			pagination: {
+				currentPage: Number(page),
+				totalPages: Math.ceil(total / Number(limit)),
+				total,
+				hasNext: skip + users.length < total,
+				hasPrev: Number(page) > 1,
+			},
+		});
+	} catch (error) {
+		console.error("Error fetching admin users:", error);
+		res.status(500).json({ error: "Failed to fetch users" });
+	}
+});
+
+// Update user role
+app.patch("/api/admin/users/:id/role", authenticateAdmin, async (req, res) => {
+	try {
+		const { id } = req.params;
+		const { role } = req.body;
+
+		if (!["user", "admin", "moderator"].includes(role)) {
+			return res.status(400).json({ error: "Invalid role" });
+		}
+
+		// Prevent changing your own role
+		if (id === req.user.userId && role !== "admin") {
+			return res.status(400).json({ error: "Cannot change your own role" });
+		}
+
+		const user = await User.findByIdAndUpdate(
+			id,
+			{ role },
+			{ new: true }
+		).select("-password");
+
+		if (!user) {
+			return res.status(404).json({ error: "User not found" });
+		}
+
+		res.json(user);
+	} catch (error) {
+		console.error("Error updating user role:", error);
+		res.status(500).json({ error: "Failed to update user role" });
+	}
+});
+
+// Delete product (admin)
+app.delete("/api/admin/products/:id", authenticateAdmin, async (req, res) => {
+	try {
+		const product = await Product.findByIdAndDelete(req.params.id);
+		if (!product) {
+			return res.status(404).json({ error: "Product not found" });
+		}
+		res.json({ message: "Product deleted successfully" });
+	} catch (error) {
+		console.error("Error deleting product:", error);
+		res.status(500).json({ error: "Failed to delete product" });
 	}
 });
 

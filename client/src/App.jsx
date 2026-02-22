@@ -20,6 +20,7 @@ import Messages from "./pages/Messages";
 import Chat from "./pages/Chat";
 import Login from "./components/Login";
 import Register from "./components/Register";
+import AdminDashboard from "./pages/AdminDashboard";
 
 function App() {
 	const [isFavoritesSidebarOpen, setIsFavoritesSidebarOpen] = useState(false);
@@ -54,6 +55,7 @@ function App() {
 										<Route path="/chat" element={<Chat />} />
 										<Route path="/login" element={<Login />} />
 										<Route path="/register" element={<Register />} />
+										<Route path="/admin" element={<AdminDashboard />} />
 									</Routes>
 								</main>
 								<FavoritesSidebar

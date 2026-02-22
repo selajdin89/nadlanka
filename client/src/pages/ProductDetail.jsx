@@ -57,19 +57,9 @@ const ProductDetail = () => {
 		}
 	}, [product?._id]);
 
-	// Load or create chat when product and user are available
-	useEffect(() => {
-		if (product && product.seller && isAuthenticated && user && !isOwner) {
-			loadOrCreateChat();
-		}
-	}, [product?._id, product?.seller?._id, isAuthenticated, user?._id]);
-
-	// Join chat room when chat is available
-	useEffect(() => {
-		if (currentChat && socket) {
-			socket.emit("join_chat", currentChat._id);
-		}
-	}, [currentChat, socket]);
+	// Check if current user owns this product
+	const isOwner =
+		isAuthenticated && user && product && product.seller?._id === user._id;
 
 	const fetchProduct = async () => {
 		try {
@@ -84,7 +74,47 @@ const ProductDetail = () => {
 		}
 	};
 
+	const loadOrCreateChat = async () => {
+		if (!product || !product.seller || !user?.token) return;
+
+		try {
+			const response = await axios.post(
+				"/api/chat/start",
+				{
+					sellerId: product.seller._id,
+					productId: product._id,
+				},
+				{
+					headers: {
+						Authorization: `Bearer ${user.token}`,
+					},
+				}
+			);
+			setCurrentChat(response.data.chat);
+		} catch (error) {
+			console.error("Error loading/creating chat:", error);
+		}
+	};
+
+	// Load or create chat when product and user are available
+	useEffect(() => {
+		if (product && product.seller && isAuthenticated && user && !isOwner) {
+			loadOrCreateChat();
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [product?._id, product?.seller?._id, isAuthenticated, user?._id, isOwner]);
+
+	// Join chat room when chat is available
+	useEffect(() => {
+		if (currentChat && socket) {
+			socket.emit("join_chat", currentChat._id);
+		}
+	}, [currentChat, socket]);
+
 	const formatPrice = (price, currency = "MKD") => {
+		if (!price || price === null) {
+			return t("createProduct.form.priceByAgreement") || "По договор";
+		}
 		return new Intl.NumberFormat("mk-MK", {
 			style: "currency",
 			currency: currency,
@@ -98,10 +128,6 @@ const ProductDetail = () => {
 			day: "numeric",
 		});
 	};
-
-	// Check if current user owns this product
-	const isOwner =
-		isAuthenticated && user && product && product.seller?._id === user._id;
 
 	const handleDeleteProduct = async () => {
 		if (
@@ -144,28 +170,6 @@ const ProductDetail = () => {
 				t("product.statusError") ||
 					"Failed to update product status. Please try again."
 			);
-		}
-	};
-
-	const loadOrCreateChat = async () => {
-		if (!product || !product.seller || !user?.token) return;
-
-		try {
-			const response = await axios.post(
-				"/api/chat/start",
-				{
-					sellerId: product.seller._id,
-					productId: product._id,
-				},
-				{
-					headers: {
-						Authorization: `Bearer ${user.token}`,
-					},
-				}
-			);
-			setCurrentChat(response.data.chat);
-		} catch (error) {
-			console.error("Error loading/creating chat:", error);
 		}
 	};
 
@@ -396,19 +400,19 @@ const ProductDetail = () => {
 									rows={4}
 									disabled={sendingMessage}
 								/>
-								<button
-									className="btn btn-primary send-message-btn-left"
-									onClick={handleSendMessage}
-									disabled={sendingMessage || !messageText.trim()}
-								>
-									{sendingMessage ? (
-										<span className="spinner-small"></span>
-									) : (
-										<Send size={18} />
-									)}
-									<span>{t("contact.sendMessage") || "Send"}</span>
-								</button>
 							</div>
+							<button
+								className="btn btn-primary send-message-btn-left"
+								onClick={handleSendMessage}
+								disabled={sendingMessage || !messageText.trim()}
+							>
+								{sendingMessage ? (
+									<span className="spinner-small"></span>
+								) : (
+									<Send size={18} />
+								)}
+								<span>{t("contact.sendMessage") || "Send"}</span>
+							</button>
 							{messageSent && (
 								<div className="message-sent-confirmation-left">
 									{t("contact.messageSent") || "Message sent successfully!"}
@@ -464,7 +468,9 @@ const ProductDetail = () => {
 							<MapPin size={16} />
 							<span>
 								<strong>{t("common.location") || "Location"}:</strong>{" "}
-								{product.location}
+								{product.region
+									? `${product.location}, ${product.region}`
+									: product.location}
 							</span>
 						</div>
 						<div className="meta-item">
@@ -526,7 +532,7 @@ const ProductDetail = () => {
 								</div>
 							)}
 
-							{product.category === "Cars" && (
+							{product.category === "Vehicles" && (
 								<div className="car-details">
 									<h3>Vehicle Details</h3>
 									<div className="details-grid">
@@ -655,6 +661,55 @@ const ProductDetail = () => {
 								>
 									{t("product.viewSellerProducts") || "View Seller's Products"}
 								</Link>
+								{/* Contact Options - Only show if contact info exists */}
+								{(getSellerEmail() ||
+									(getSellerPhone() &&
+										isValidMacedoniaPhone(getSellerPhone()))) && (
+									<div className="seller-contact-options">
+										{getSellerEmail() && (
+											<button
+												className="contact-option-btn email-btn"
+												onClick={handleSendEmail}
+												title={t("contact.sendEmail") || "Send Email"}
+											>
+												<Mail size={18} />
+												<span>{t("contact.sendEmail") || "Email"}</span>
+											</button>
+										)}
+										{getSellerPhone() &&
+											isValidMacedoniaPhone(getSellerPhone()) && (
+												<>
+													<button
+														className="contact-option-btn call-btn"
+														onClick={handleCall}
+														title={t("contact.call") || "Call"}
+													>
+														<Phone size={18} />
+														<span>{t("contact.call") || "Call"}</span>
+													</button>
+													{/* Only show WhatsApp if seller accepts WhatsApp */}
+													{product.seller?.preferences?.acceptsWhatsApp !==
+														false && (
+														<button
+															className="contact-option-btn whatsapp-btn"
+															onClick={handleWhatsApp}
+															title={t("contact.whatsapp") || "WhatsApp"}
+														>
+															<svg
+																width="18"
+																height="18"
+																viewBox="0 0 24 24"
+																fill="currentColor"
+															>
+																<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+															</svg>
+															<span>{t("contact.whatsapp") || "WhatsApp"}</span>
+														</button>
+													)}
+												</>
+											)}
+									</div>
+								)}
 							</>
 						)}
 					</div>
@@ -702,52 +757,6 @@ const ProductDetail = () => {
 					</>
 				) : null}
 			</div>
-
-			{/* Contact Options - Only show for non-owners */}
-			{!isOwner && (
-				<>
-					{/* Quick Contact Buttons */}
-					<div className="contact-options-bar">
-						{getSellerEmail() && (
-							<button
-								className="contact-option-btn email-btn"
-								onClick={handleSendEmail}
-								title={t("contact.sendEmail") || "Send Email"}
-							>
-								<Mail size={20} />
-								<span>{t("contact.sendEmail") || "Email"}</span>
-							</button>
-						)}
-						{isValidMacedoniaPhone(getSellerPhone()) && (
-							<>
-								<button
-									className="contact-option-btn call-btn"
-									onClick={handleCall}
-									title={t("contact.call") || "Call"}
-								>
-									<Phone size={20} />
-									<span>{t("contact.call") || "Call"}</span>
-								</button>
-								<button
-									className="contact-option-btn whatsapp-btn"
-									onClick={handleWhatsApp}
-									title={t("contact.whatsapp") || "WhatsApp"}
-								>
-									<svg
-										width="20"
-										height="20"
-										viewBox="0 0 24 24"
-										fill="currentColor"
-									>
-										<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
-									</svg>
-									<span>{t("contact.whatsapp") || "WhatsApp"}</span>
-								</button>
-							</>
-						)}
-					</div>
-				</>
-			)}
 		</div>
 	);
 };

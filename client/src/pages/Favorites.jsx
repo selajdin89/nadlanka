@@ -131,7 +131,7 @@ const Favorites = () => {
 											<p className="product-price">
 												{formatPrice(product.price, product.currency)}
 											</p>
-											<p className="product-location">{product.location}</p>
+											<p className="product-location">{product.region ? `${product.location}, ${product.region}` : product.location}</p>
 											<div className="product-meta">
 												<span className="product-category">
 													{translateCategory(product.category, t)}

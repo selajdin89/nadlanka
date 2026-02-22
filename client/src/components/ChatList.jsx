@@ -1,11 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useSocket } from "../contexts/SocketContext";
 import { MessageCircle, Search, Plus } from "lucide-react";
 import "./ChatList.scss";
 
-const ChatList = ({ onChatSelect, onCreateChat, onUnreadCountChange }) => {
+const ChatList = ({
+	onChatSelect,
+	onCreateChat,
+	onUnreadCountChange,
+	refreshTrigger,
+}) => {
 	const { user } = useAuth();
 	const { t } = useLanguage();
 	const { socket } = useSocket();
@@ -13,6 +18,27 @@ const ChatList = ({ onChatSelect, onCreateChat, onUnreadCountChange }) => {
 	const [loading, setLoading] = useState(true);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [unreadCount, setUnreadCount] = useState(0);
+	const [hoveredChatId, setHoveredChatId] = useState(null);
+	const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
+	const nameRefs = useRef({});
+	const chatListRef = useRef(null);
+
+	// Calculate popup position relative to chat interface
+	useEffect(() => {
+		if (hoveredChatId && chatListRef.current) {
+			// Use a small timeout to ensure DOM is updated
+			const timeout = setTimeout(() => {
+				if (chatListRef.current) {
+					const chatListRect = chatListRef.current.getBoundingClientRect();
+					setPopupPosition({
+						top: chatListRect.top + 10, // 20px from top of chat interface
+						left: Math.max(10, chatListRect.left - 285), // 300px to the left of chat interface, but at least 10px from left edge
+					});
+				}
+			}, 0);
+			return () => clearTimeout(timeout);
+		}
+	}, [hoveredChatId, chats]);
 
 	useEffect(() => {
 		if (user?._id) {
@@ -28,6 +54,15 @@ const ChatList = ({ onChatSelect, onCreateChat, onUnreadCountChange }) => {
 			return () => clearInterval(interval);
 		}
 	}, [user?._id]);
+
+	// Refresh chats when refreshTrigger changes (e.g., after deleting a chat)
+	useEffect(() => {
+		if (refreshTrigger !== undefined && refreshTrigger > 0 && user?._id) {
+			fetchChats(false);
+			fetchUnreadCount();
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [refreshTrigger, user?._id]);
 
 	// Listen for new messages to update chat list in real-time
 	useEffect(() => {
@@ -94,18 +129,18 @@ const ChatList = ({ onChatSelect, onCreateChat, onUnreadCountChange }) => {
 			setUnreadCount(0);
 			return;
 		}
-		
+
 		try {
 			const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 			const url = `${API_BASE_URL}/api/chat/user/${user._id}/unread-count`;
-			
+
 			const response = await fetch(url, {
 				headers: {
 					Authorization: `Bearer ${user.token}`,
 					"Content-Type": "application/json",
 				},
 			});
-			
+
 			// Check if response is ok and is JSON
 			if (!response.ok) {
 				// If not ok, don't try to parse as JSON
@@ -116,7 +151,7 @@ const ChatList = ({ onChatSelect, onCreateChat, onUnreadCountChange }) => {
 				}
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
-			
+
 			// Check if response is actually JSON
 			const contentType = response.headers.get("content-type");
 			if (!contentType || !contentType.includes("application/json")) {
@@ -124,7 +159,7 @@ const ChatList = ({ onChatSelect, onCreateChat, onUnreadCountChange }) => {
 				setUnreadCount(0);
 				return;
 			}
-			
+
 			const data = await response.json();
 			const newUnreadCount = data.unreadCount || 0;
 			setUnreadCount(newUnreadCount);
@@ -180,7 +215,7 @@ const ChatList = ({ onChatSelect, onCreateChat, onUnreadCountChange }) => {
 
 	if (loading) {
 		return (
-			<div className="chat-list">
+			<div className="chat-list" ref={chatListRef}>
 				<div className="loading-chats">
 					<p>{t("common.loading") || "Loading chats..."}</p>
 				</div>
@@ -188,97 +223,157 @@ const ChatList = ({ onChatSelect, onCreateChat, onUnreadCountChange }) => {
 		);
 	}
 
+	// Get hovered chat data
+	const hoveredChat = hoveredChatId
+		? chats.find((c) => c._id === hoveredChatId)
+		: null;
+	const hoveredParticipant = hoveredChat
+		? hoveredChat.participants.find((p) => p.user && p.user._id !== user._id)
+		: null;
+
 	return (
-		<div className="chat-list">
-			<div className="chat-list-header">
-				<h2>{t("chat.title") || "Messages"}</h2>
-				{unreadCount > 0 && <span className="unread-badge">{unreadCount}</span>}
-				<button
-					className="new-chat-btn"
-					onClick={onCreateChat}
-					title={t("chat.newChat") || "New Chat"}
+		<>
+			{/* Popup fixed at top left of chat interface - rendered outside to avoid clipping */}
+			{hoveredChatId && hoveredChat && hoveredChat.product && (
+				<div
+					className="chat-hover-popup"
+					style={{
+						top: `${popupPosition.top}px`,
+						left: `${popupPosition.left}px`,
+					}}
+					onMouseEnter={() => setHoveredChatId(hoveredChatId)}
+					onMouseLeave={() => setHoveredChatId(null)}
 				>
-					<Plus size={20} />
-				</button>
-			</div>
-
-			<div className="chat-search">
-				<Search size={16} />
-				<input
-					type="text"
-					placeholder={t("chat.search") || "Search chats..."}
-					value={searchQuery}
-					onChange={(e) => setSearchQuery(e.target.value)}
-				/>
-			</div>
-
-			<div className="chats-container">
-				{filteredChats.length === 0 ? (
-					<div className="no-chats">
-						<MessageCircle size={48} />
-						<p>{t("chat.noChats") || "No chats found"}</p>
-						{searchQuery && (
-							<button
-								className="clear-search-btn"
-								onClick={() => setSearchQuery("")}
-							>
-								{t("chat.clearSearch") || "Clear search"}
-							</button>
-						)}
+					<div className="popup-header">
+						<div className="popup-avatar">
+							{hoveredParticipant?.user?.name?.charAt(0) || "?"}
+						</div>
+						<div className="popup-name">
+							{hoveredParticipant?.user?.name || "Unknown User"}
+						</div>
 					</div>
-				) : (
-					filteredChats.map((chat) => {
-						const otherParticipant = getOtherParticipant(chat);
-						const isUnread = chat.unreadCount > 0;
+					{hoveredChat.product?.images &&
+						hoveredChat.product.images.length > 0 && (
+							<div className="popup-image">
+								<img
+									src={hoveredChat.product.images[0]}
+									alt={hoveredChat.product.title || "Product"}
+									onError={(e) => {
+										e.target.style.display = "none";
+									}}
+								/>
+							</div>
+						)}
+					{hoveredChat.product?.title && (
+						<div className="popup-title">{hoveredChat.product.title}</div>
+					)}
+					{hoveredChat.product?.price && (
+						<div className="popup-price">
+							{hoveredChat.product.price}{" "}
+							{hoveredChat.product.currency || "EUR"}
+						</div>
+					)}
+				</div>
+			)}
+			<div className="chat-list" ref={chatListRef}>
+				<div className="chat-search">
+					<Search size={16} />
+					<input
+						type="text"
+						placeholder={t("chat.search") || "Search chats..."}
+						value={searchQuery}
+						onChange={(e) => setSearchQuery(e.target.value)}
+					/>
+				</div>
 
-						return (
-							<div
-								key={chat._id}
-								className={`chat-item ${isUnread ? "unread" : ""}`}
-								onClick={() => {
-									onChatSelect(chat);
-									// Refresh unread count when selecting a chat
-									setTimeout(() => fetchUnreadCount(), 200);
-								}}
-							>
-								<div className="chat-avatar">
-									{otherParticipant?.user?.name?.charAt(0) || "?"}
-								</div>
-								<div className="chat-content">
-									<div className="chat-header">
-										<h3 className="chat-name">
-											{otherParticipant?.user?.name || "Unknown User"}
-										</h3>
-										{chat.lastMessage && (
-											<span className="chat-time">
-												{formatTime(chat.lastMessage.sentAt)}
-											</span>
-										)}
+				<div className="chats-container">
+					{filteredChats.length === 0 ? (
+						<div className="no-chats">
+							<MessageCircle size={48} />
+							<p>{t("chat.noChats") || "No chats found"}</p>
+							{searchQuery && (
+								<button
+									className="clear-search-btn"
+									onClick={() => setSearchQuery("")}
+								>
+									{t("chat.clearSearch") || "Clear search"}
+								</button>
+							)}
+						</div>
+					) : (
+						filteredChats.map((chat) => {
+							const otherParticipant = getOtherParticipant(chat);
+							const isUnread = chat.unreadCount > 0;
+							const isHovered = hoveredChatId === chat._id;
+
+							return (
+								<div
+									key={chat._id}
+									className={`chat-item ${isUnread ? "unread" : ""}`}
+									onClick={() => {
+										onChatSelect(chat);
+										// Refresh unread count when selecting a chat
+										setTimeout(() => fetchUnreadCount(), 200);
+									}}
+								>
+									<div className="chat-avatar">
+										{otherParticipant?.user?.name?.charAt(0) || "?"}
 									</div>
-									<div className="chat-preview">
-										<p className="chat-message">
-											{chat.lastMessage?.content ||
-												t("chat.noMessages") ||
-												"No messages yet"}
-										</p>
+									<div className="chat-content">
+										<div className="chat-header">
+											<div className="chat-name-wrapper">
+												<h3
+													ref={(el) => (nameRefs.current[chat._id] = el)}
+													className="chat-name"
+													onMouseEnter={(e) => {
+														// Only set hover if chat has a product
+														if (chat.product) {
+															setHoveredChatId(chat._id);
+														}
+													}}
+													onMouseLeave={(e) => {
+														// Don't hide if moving to popup
+														const relatedTarget = e.relatedTarget;
+														if (
+															relatedTarget &&
+															relatedTarget.closest(".chat-hover-popup")
+														) {
+															return;
+														}
+														// Simple delay to allow moving to popup
+														setTimeout(() => {
+															if (
+																!document.querySelector(
+																	".chat-hover-popup:hover"
+																)
+															) {
+																setHoveredChatId(null);
+															}
+														}, 200);
+													}}
+												>
+													{otherParticipant?.user?.name || "Unknown User"}
+												</h3>
+											</div>
+											{chat.lastMessage && (
+												<span className="chat-time">
+													{formatTime(chat.lastMessage.sentAt)}
+												</span>
+											)}
+										</div>
 										{isUnread && (
 											<span className="unread-indicator">
 												{chat.unreadCount}
 											</span>
 										)}
 									</div>
-									{chat.product && (
-										<div className="chat-product">
-											{t("chat.about") || "About"}: {chat.product.title}
-										</div>
-									)}
 								</div>
-							</div>
-						);
-					})
-				)}
+							);
+						})
+					)}
+				</div>
 			</div>
-		</div>
+		</>
 	);
 };
 

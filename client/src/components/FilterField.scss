@@ -1,0 +1,22 @@
+.filter-field {
+	width: 100%;
+
+	&.filter-field-range {
+		.range-selects {
+			display: flex;
+			gap: 8px;
+			width: 100%;
+
+			.custom-select {
+				flex: 1;
+			}
+		}
+	}
+
+	&.filter-field-single {
+		.custom-select {
+			width: 100%;
+		}
+	}
+}
+

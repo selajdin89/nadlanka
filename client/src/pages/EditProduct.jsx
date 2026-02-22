@@ -4,6 +4,20 @@ import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import axios from "axios";
 import { ArrowLeft, Save, Upload, X } from "lucide-react";
+import CustomSelect from "../components/CustomSelect";
+import { macedonianCities } from "../utils/macedonianCities";
+import { skopjeRegions } from "../utils/skopjeRegions";
+import {
+	carBrands,
+	getModelsForBrand,
+	getBrandOptions,
+	getModelOptions,
+	getFuelTypeOptions,
+	getTransmissionOptions,
+	getPowerKWOptions,
+	generateYearOptions,
+	generateMileageOptions,
+} from "../utils/carProperties";
 import "./EditProduct.scss";
 
 const EditProduct = () => {
@@ -23,12 +37,15 @@ const EditProduct = () => {
 		description: "",
 		price: "",
 		category: "",
-		categoryType: "", // general, realEstate, cars
+		categoryType: "", // general, realEstate, vehicles
 		condition: "",
 		location: "",
+		region: "",
 		status: "active",
 		images: [],
 		tags: "",
+		brand: "",
+		model: "",
 		categorySpecific: {
 			// Real Estate fields
 			propertyType: "",
@@ -39,6 +56,7 @@ const EditProduct = () => {
 			// Car fields
 			fuelType: "",
 			mileage: "",
+			powerKW: "",
 			year: "",
 			transmission: "",
 			color: "",
@@ -83,8 +101,8 @@ const EditProduct = () => {
 			let categoryType = "general";
 			if (productData.category === "Real Estate") {
 				categoryType = "realEstate";
-			} else if (productData.category === "Cars") {
-				categoryType = "cars";
+			} else if (productData.category === "Vehicles") {
+				categoryType = "vehicles";
 			}
 
 			const newFormData = {
@@ -95,9 +113,12 @@ const EditProduct = () => {
 				categoryType: categoryType,
 				condition: convertCondition(productData.condition) || "",
 				location: productData.location || "",
+				region: productData.region || "",
 				status: productData.status || "active",
 				images: productData.images || [],
 				tags: productData.tags ? productData.tags.join(", ") : "",
+				brand: productData.brand || "",
+				model: productData.model || "",
 				categorySpecific: productData.categorySpecific || {
 					propertyType: "",
 					area: "",
@@ -106,6 +127,7 @@ const EditProduct = () => {
 					bathrooms: "",
 					fuelType: "",
 					mileage: "",
+					powerKW: "",
 					year: "",
 					transmission: "",
 					color: "",
@@ -151,14 +173,21 @@ const EditProduct = () => {
 				let categoryType = "general";
 				if (value === "Real Estate") {
 					categoryType = "realEstate";
-				} else if (value === "Cars") {
-					categoryType = "cars";
+				} else if (value === "Vehicles") {
+					categoryType = "vehicles";
 				}
 
 				setFormData((prev) => ({
 					...prev,
 					category: value,
 					categoryType: categoryType,
+				}));
+			} else if (name === "brand") {
+				// Clear model when brand changes
+				setFormData((prev) => ({
+					...prev,
+					brand: value,
+					model: "",
 				}));
 			} else {
 				setFormData((prev) => ({
@@ -256,7 +285,7 @@ const EditProduct = () => {
 	const getTranslatedCategories = () => [
 		{ value: "Electronics", label: t("categories.electronics") },
 		{ value: "Furniture", label: t("categories.furniture") },
-		{ value: "Cars", label: t("categories.cars") },
+		{ value: "Vehicles", label: t("categories.vehicles") || t("categories.cars") },
 		{ value: "Real Estate", label: t("categories.realEstate") },
 		{ value: "Fashion", label: t("categories.fashion") },
 		{ value: "Books", label: t("categories.books") },
@@ -268,11 +297,7 @@ const EditProduct = () => {
 
 	const getTranslatedConditions = () => [
 		{ value: "New", label: t("conditions.new") },
-		{ value: "Like New", label: t("conditions.like_new") },
-		{ value: "Very Good", label: t("conditions.very_good") },
-		{ value: "Good", label: t("conditions.good") },
-		{ value: "Fair", label: t("conditions.fair") },
-		{ value: "Poor", label: t("conditions.poor") },
+		{ value: "Used", label: t("conditions.used") },
 	];
 
 	if (loading) {
@@ -331,10 +356,10 @@ const EditProduct = () => {
 				<div className="form-grid">
 					{/* Basic Information */}
 					<div className="form-section">
-						<h2>{t("product.basicInfo") || "Basic Information"}</h2>
+						<h2>{t("createProduct.form.basicInfo") || "Basic Information"}</h2>
 
 						<div className="form-group">
-							<label htmlFor="title">{t("product.title") || "Title"} *</label>
+							<label htmlFor="title">{t("createProduct.form.title")} *</label>
 							<input
 								type="text"
 								id="title"
@@ -342,15 +367,13 @@ const EditProduct = () => {
 								value={formData.title}
 								onChange={handleInputChange}
 								required
-								placeholder={
-									t("product.titlePlaceholder") || "Enter product title"
-								}
+								placeholder={t("createProduct.form.title.placeholder") || "Enter product title"}
 							/>
 						</div>
 
 						<div className="form-group">
 							<label htmlFor="description">
-								{t("product.description") || "Description"} *
+								{t("createProduct.form.description")} *
 							</label>
 							<textarea
 								id="description"
@@ -359,15 +382,13 @@ const EditProduct = () => {
 								onChange={handleInputChange}
 								required
 								rows={4}
-								placeholder={
-									t("product.descriptionPlaceholder") || "Describe your product"
-								}
+								placeholder={t("createProduct.form.description.placeholder") || "Describe your product"}
 							/>
 						</div>
 
 						<div className="form-row">
 							<div className="form-group">
-								<label htmlFor="price">{t("product.price") || "Price"} *</label>
+								<label htmlFor="price">{t("createProduct.form.price")} *</label>
 								<input
 									type="number"
 									id="price"
@@ -383,70 +404,51 @@ const EditProduct = () => {
 
 							<div className="form-group">
 								<label htmlFor="category">
-									{t("product.category") || "Category"} *
+									{t("createProduct.form.category")} *
 								</label>
-								<select
+								<CustomSelect
 									id="category"
 									name="category"
 									value={formData.category}
 									onChange={handleInputChange}
 									required
-								>
-									<option value="">
-										{t("product.selectCategory") || "Select Category"}
-									</option>
-									{getTranslatedCategories().map((category) => (
-										<option key={category.value} value={category.value}>
-											{category.label}
-										</option>
-									))}
-								</select>
+									placeholder={t("createProduct.select.category") || "Select Category"}
+									options={getTranslatedCategories()}
+								/>
 							</div>
 						</div>
 
 						<div className="form-row">
 							<div className="form-group">
 								<label htmlFor="condition">
-									{t("product.condition") || "Condition"} *
+									{t("createProduct.form.condition")} *
 								</label>
-								<select
+								<CustomSelect
 									id="condition"
 									name="condition"
 									value={formData.condition}
 									onChange={handleInputChange}
 									required
-								>
-									<option value="">
-										{t("product.selectCondition") || "Select Condition"}
-									</option>
-									{getTranslatedConditions().map((condition) => (
-										<option key={condition.value} value={condition.value}>
-											{condition.label}
-										</option>
-									))}
-								</select>
+									placeholder={t("createProduct.select.condition") || "Select Condition"}
+									options={getTranslatedConditions()}
+								/>
 							</div>
 
 							<div className="form-group">
 								<label htmlFor="status">
-									{t("product.status") || "Status"}
+									{t("createProduct.form.status") || "Status"}
 								</label>
-								<select
+								<CustomSelect
 									id="status"
 									name="status"
 									value={formData.status}
 									onChange={handleInputChange}
-								>
-									<option value="active">
-										{t("product.status.active") || "Active"}
-									</option>
-									<option value="inactive">
-										{t("product.status.inactive") || "Inactive"}
-									</option>
-									<option value="sold">
-										{t("product.status.sold") || "Sold"}
-									</option>
-								</select>
+									options={[
+										{ value: "active", label: t("product.status.active") || "Active" },
+										{ value: "inactive", label: t("product.status.inactive") || "Inactive" },
+										{ value: "sold", label: t("product.status.sold") || "Sold" },
+									]}
+								/>
 							</div>
 						</div>
 					</div>
@@ -457,36 +459,63 @@ const EditProduct = () => {
 
 						<div className="form-group">
 							<label htmlFor="location">
-								{t("product.location") || "Location"} *
+								{t("createProduct.form.location") || "Location"} *
 							</label>
-							<input
-								type="text"
+							<CustomSelect
 								id="location"
 								name="location"
 								value={formData.location}
-								onChange={handleInputChange}
+								onChange={(e) => {
+									handleInputChange(e);
+									// Clear region when location changes
+									if (e.target.value !== "Скопје") {
+										setFormData((prev) => ({ ...prev, region: "" }));
+									}
+								}}
 								required
-								placeholder={
-									t("product.locationPlaceholder") || "Enter location"
-								}
+								searchable={true}
+								placeholder={t("createProduct.form.location.placeholder") || "Select location"}
+								options={macedonianCities.slice(1).map((city) => ({
+									value: city.value,
+									label: city.label,
+								}))}
 							/>
 						</div>
 
+						{/* Region field - only shown when Скопје is selected */}
+						{formData.location === "Скопје" && (
+							<div className="form-group">
+								<label htmlFor="region">
+									{t("createProduct.form.region") || "Region"} *
+								</label>
+								<CustomSelect
+									id="region"
+									name="region"
+									value={formData.region}
+									onChange={handleInputChange}
+									required
+									searchable={true}
+									placeholder={t("createProduct.form.region.placeholder") || "Select region"}
+									options={skopjeRegions.map((region) => ({
+										value: region.value,
+										label: region.label,
+									}))}
+								/>
+							</div>
+						)}
+
 						<div className="form-group">
-							<label htmlFor="tags">{t("product.tags") || "Tags"}</label>
+							<label htmlFor="tags">{t("createProduct.form.tags") || "Tags"}</label>
 							<input
 								type="text"
 								id="tags"
 								name="tags"
 								value={formData.tags}
 								onChange={handleInputChange}
-								placeholder={
-									t("product.tagsPlaceholder") ||
-									"Enter tags separated by commas"
-								}
+								placeholder={t("createProduct.form.tags.placeholder") || "Enter tags separated by commas"}
 							/>
 							<small>
-								{t("product.tagsHelp") ||
+								{t("createProduct.form.tags.help") ||
 									"Separate tags with commas (e.g., vintage, electronics, gaming)"}
 							</small>
 						</div>
@@ -502,29 +531,20 @@ const EditProduct = () => {
 									<label htmlFor="categorySpecific.propertyType">
 										{t("createProduct.realEstate.propertyType") || "Property Type"} *
 									</label>
-									<select
+									<CustomSelect
 										id="categorySpecific.propertyType"
 										name="categorySpecific.propertyType"
 										value={formData.categorySpecific.propertyType}
 										onChange={handleInputChange}
 										required
-									>
-										<option value="">
-											{t("createProduct.select.propertyType") || "Select Property Type"}
-										</option>
-										<option value="apartment">
-											{t("createProduct.realEstate.propertyType.apartment") || "Apartment"}
-										</option>
-										<option value="house">
-											{t("createProduct.realEstate.propertyType.house") || "House"}
-										</option>
-										<option value="land">
-											{t("createProduct.realEstate.propertyType.land") || "Land"}
-										</option>
-										<option value="commercial">
-											{t("createProduct.realEstate.propertyType.commercial") || "Commercial"}
-										</option>
-									</select>
+										placeholder={t("createProduct.select.propertyType") || "Select Property Type"}
+										options={[
+											{ value: "apartment", label: t("createProduct.realEstate.propertyType.apartment") || "Apartment" },
+											{ value: "house", label: t("createProduct.realEstate.propertyType.house") || "House" },
+											{ value: "land", label: t("createProduct.realEstate.propertyType.land") || "Land" },
+											{ value: "commercial", label: t("createProduct.realEstate.propertyType.commercial") || "Commercial" },
+										]}
+									/>
 								</div>
 
 								<div className="form-group">
@@ -566,51 +586,104 @@ const EditProduct = () => {
 										<label htmlFor="categorySpecific.bedrooms">
 											{t("createProduct.realEstate.bedrooms") || "Bedrooms"}
 										</label>
-										<select
+										<CustomSelect
 											id="categorySpecific.bedrooms"
 											name="categorySpecific.bedrooms"
 											value={formData.categorySpecific.bedrooms}
 											onChange={handleInputChange}
-										>
-											<option value="">
-												{t("createProduct.select.bedrooms") || "Select"}
-											</option>
-											<option value="1">1</option>
-											<option value="2">2</option>
-											<option value="3">3</option>
-											<option value="4">4</option>
-											<option value="5+">5+</option>
-										</select>
+											placeholder={t("createProduct.select.bedrooms") || "Select"}
+											options={[
+												{ value: "1", label: "1" },
+												{ value: "2", label: "2" },
+												{ value: "3", label: "3" },
+												{ value: "4", label: "4" },
+												{ value: "5+", label: "5+" },
+											]}
+										/>
 									</div>
 
 									<div className="form-group">
 										<label htmlFor="categorySpecific.bathrooms">
 											{t("createProduct.realEstate.bathrooms") || "Bathrooms"}
 										</label>
-										<select
+										<CustomSelect
 											id="categorySpecific.bathrooms"
 											name="categorySpecific.bathrooms"
 											value={formData.categorySpecific.bathrooms}
 											onChange={handleInputChange}
-										>
-											<option value="">
-												{t("createProduct.select.bathrooms") || "Select"}
-											</option>
-											<option value="1">1</option>
-											<option value="2">2</option>
-											<option value="3">3</option>
-											<option value="4+">4+</option>
-										</select>
+											placeholder={t("createProduct.select.bathrooms") || "Select"}
+											options={[
+												{ value: "1", label: "1" },
+												{ value: "2", label: "2" },
+												{ value: "3", label: "3" },
+												{ value: "4+", label: "4+" },
+											]}
+										/>
 									</div>
 								</div>
 							)}
 						</div>
 					)}
 
-					{/* Cars Specific Fields */}
-					{formData.categoryType === "cars" && (
+					{/* Vehicles Specific Fields - Show for Vehicles category, but hide for parts/accessories subcategory */}
+					{formData.categoryType === "vehicles" && 
+					 (!formData.subcategory || !["parts", "accessories"].includes(formData.subcategory)) && (
 						<div className="form-section">
 							<h2>{t("createProduct.cars.title") || "Vehicle Details"}</h2>
+
+							{/* Brand and Model */}
+							<div className="form-row">
+								<div className="form-group">
+									<label htmlFor="brand">
+										{t("createProduct.cars.brand") || "Brand"} *
+									</label>
+									<CustomSelect
+										id="brand"
+										name="brand"
+										value={formData.brand || ""}
+										onChange={handleInputChange}
+										placeholder={t("createProduct.select.brand") || "Select brand"}
+										searchable
+										options={getBrandOptions(t, false)}
+									/>
+								</div>
+								<div className="form-group">
+									<label htmlFor="model">
+										{t("createProduct.cars.model") || "Model"} *
+									</label>
+									{formData.brand ? (
+										<>
+											<input
+												type="text"
+												id="model"
+												name="model"
+												list={`model-list-edit-${formData.brand}`}
+												value={formData.model || ""}
+												onChange={handleInputChange}
+												placeholder={t("createProduct.cars.model.placeholder") || "Enter or select model"}
+												autoComplete="off"
+											/>
+											{getModelsForBrand(formData.brand).length > 0 && (
+												<datalist id={`model-list-edit-${formData.brand}`}>
+													{getModelsForBrand(formData.brand).map((model, index) => (
+														<option key={index} value={model} />
+													))}
+												</datalist>
+											)}
+										</>
+									) : (
+										<input
+											type="text"
+											id="model"
+											name="model"
+											value={formData.model || ""}
+											onChange={handleInputChange}
+											placeholder={t("createProduct.cars.model.placeholderSelectBrand") || "Select brand first"}
+											disabled
+										/>
+									)}
+								</div>
+							</div>
 
 							<div className="form-row">
 								<div className="form-group">
@@ -647,54 +720,52 @@ const EditProduct = () => {
 							</div>
 
 							<div className="form-row">
+							<div className="form-group">
+								<label htmlFor="categorySpecific.powerKW">
+									{t("createProduct.cars.powerKW") || "Power (kW)"}
+								</label>
+								<CustomSelect
+									id="categorySpecific.powerKW"
+									name="categorySpecific.powerKW"
+									value={formData.categorySpecific.powerKW}
+									onChange={handleInputChange}
+									placeholder={t("createProduct.select.powerKW") || "Select Power (kW)"}
+									searchable
+									options={[
+										{ value: "", label: t("createProduct.select.powerKW") || "Select Power (kW)" },
+										...getPowerKWOptions(),
+									]}
+								/>
+							</div>
+
 								<div className="form-group">
 									<label htmlFor="categorySpecific.fuelType">
 										{t("createProduct.cars.fuelType") || "Fuel Type"} *
 									</label>
-									<select
+									<CustomSelect
 										id="categorySpecific.fuelType"
 										name="categorySpecific.fuelType"
 										value={formData.categorySpecific.fuelType}
 										onChange={handleInputChange}
 										required
-									>
-										<option value="">{t("createProduct.select.fuelType") || "Select Fuel Type"}</option>
-										<option value="petrol">
-											{t("createProduct.cars.fuelType.petrol") || "Petrol"}
-										</option>
-										<option value="diesel">
-											{t("createProduct.cars.fuelType.diesel") || "Diesel"}
-										</option>
-										<option value="electric">
-											{t("createProduct.cars.fuelType.electric") || "Electric"}
-										</option>
-										<option value="hybrid">
-											{t("createProduct.cars.fuelType.hybrid") || "Hybrid"}
-										</option>
-									</select>
+										placeholder={t("createProduct.select.fuelType") || "Select Fuel Type"}
+										options={getFuelTypeOptions(t)}
+									/>
 								</div>
 
 								<div className="form-group">
 									<label htmlFor="categorySpecific.transmission">
 										{t("createProduct.cars.transmission") || "Transmission"} *
 									</label>
-									<select
+									<CustomSelect
 										id="categorySpecific.transmission"
 										name="categorySpecific.transmission"
 										value={formData.categorySpecific.transmission}
 										onChange={handleInputChange}
 										required
-									>
-										<option value="">
-											{t("createProduct.select.transmission") || "Select Transmission"}
-										</option>
-										<option value="manual">
-											{t("createProduct.cars.transmission.manual") || "Manual"}
-										</option>
-										<option value="automatic">
-											{t("createProduct.cars.transmission.automatic") || "Automatic"}
-										</option>
-									</select>
+										placeholder={t("createProduct.select.transmission") || "Select Transmission"}
+										options={getTransmissionOptions(t)}
+									/>
 								</div>
 							</div>
 
@@ -716,11 +787,11 @@ const EditProduct = () => {
 
 					{/* Images Section */}
 					<div className="form-section">
-						<h2>{t("product.images") || "Images"}</h2>
+						<h2>{t("createProduct.form.images") || "Images"}</h2>
 
 						<div className="form-group">
 							<label htmlFor="images">
-								{t("product.uploadImages") || "Upload Images"}
+								{t("createProduct.form.images.upload") || "Upload Images"}
 							</label>
 							<input
 								type="file"
@@ -732,8 +803,8 @@ const EditProduct = () => {
 							/>
 							<small>
 								{uploadingImages
-									? t("product.uploading") || "Uploading images..."
-									: t("product.uploadHelp") || "You can upload multiple images"}
+									? "Uploading images..."
+									: "You can upload multiple images"}
 							</small>
 						</div>
 

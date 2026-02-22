@@ -10,6 +10,8 @@
 		"seed-blog": "node seedBlogData.js",
 		"seed-all": "node seedAll.js",
 		"seed-dummy": "node seedDummyData.js",
+		"seed-macedonian": "node seedMacedonianAds.js",
+		"clear-all-products": "node clearAllProducts.js",
 		"clear-dummy-products": "node clearDummyProducts.js",
 		"check-data": "node checkData.js"
 	},

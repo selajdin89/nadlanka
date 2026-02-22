@@ -12,12 +12,12 @@
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	background: white;
+	background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%);
 	padding: 2rem;
 	border-radius: 16px;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+	box-shadow: 0 4px 16px rgba(13, 148, 136, 0.1);
 	margin-bottom: 2rem;
-	border: 1px solid #e9ecef;
+	border: 1px solid #ccfbf1;
 
 	@media (max-width: 768px) {
 		flex-direction: column;
@@ -42,7 +42,7 @@
 .profile-avatar {
 	width: 90px;
 	height: 90px;
-	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	background: linear-gradient(135deg, #0d9488 0%, #14b8a6 50%, #2dd4bf 100%);
 	color: white;
 	border-radius: 50%;
 	display: flex;
@@ -50,8 +50,9 @@
 	justify-content: center;
 	font-size: 2.5rem;
 	font-weight: 700;
-	box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+	box-shadow: 0 4px 16px rgba(13, 148, 136, 0.35);
 	flex-shrink: 0;
+	border: 3px solid rgba(255, 255, 255, 0.2);
 
 	@media (max-width: 768px) {
 		width: 80px;
@@ -65,9 +66,10 @@
 
 	h1 {
 		font-size: 2rem;
-		color: #2c3e50;
+		color: #0f172a;
 		margin-bottom: 0.5rem;
 		font-weight: 700;
+		letter-spacing: -0.5px;
 
 		@media (max-width: 768px) {
 			font-size: 1.75rem;
@@ -75,25 +77,41 @@
 	}
 
 	.profile-email {
-		color: #6c757d;
+		color: #64748b;
 		margin-bottom: 0.75rem;
 		font-size: 1rem;
+		font-weight: 500;
 	}
 
 	.profile-location,
 	.profile-phone {
-		color: #495057;
+		color: #475569;
 		margin-bottom: 0.5rem;
 		font-size: 0.95rem;
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
+		font-weight: 500;
 	}
 }
 
 .profile-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+
 	.btn {
 		padding: 0.75rem 1.5rem;
+		white-space: nowrap;
+		min-width: 140px;
+	}
+
+	@media (max-width: 768px) {
+		width: 100%;
+
+		.btn {
+			width: 100%;
+		}
 	}
 }
 
@@ -101,15 +119,15 @@
 .profile-content {
 	background: white;
 	border-radius: 16px;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+	box-shadow: 0 4px 16px rgba(13, 148, 136, 0.08);
 	overflow: hidden;
-	border: 1px solid #e9ecef;
+	border: 1px solid #e0f2fe;
 }
 
 .profile-tabs {
 	display: flex;
 	border-bottom: 2px solid #e9ecef;
-	background: #f8f9fa;
+	background: linear-gradient(to bottom, #f0fdfa 0%, #f8f9fa 100%);
 
 	@media (max-width: 768px) {
 		flex-direction: column;
@@ -124,20 +142,20 @@
 	cursor: pointer;
 	font-size: 1rem;
 	font-weight: 600;
-	color: #6c757d;
+	color: #64748b;
 	transition: all 0.3s ease;
 	border-bottom: 3px solid transparent;
 	position: relative;
 
 	&:hover {
-		color: #007bff;
-		background: rgba(0, 123, 255, 0.05);
+		color: #0d9488;
+		background: rgba(13, 148, 136, 0.08);
 	}
 
 	&.active {
-		color: #007bff;
+		color: #0d9488;
 		background: white;
-		border-bottom-color: #007bff;
+		border-bottom-color: #0d9488;
 
 		&::after {
 			content: "";
@@ -146,7 +164,7 @@
 			left: 0;
 			right: 0;
 			height: 3px;
-			background: #007bff;
+			background: linear-gradient(90deg, #0d9488 0%, #14b8a6 100%);
 		}
 	}
 
@@ -157,9 +175,9 @@
 		border-left: 4px solid transparent;
 
 		&.active {
-			border-left-color: #007bff;
+			border-left-color: #0d9488;
 			border-bottom-color: #e9ecef;
-			background: rgba(0, 123, 255, 0.05);
+			background: rgba(13, 148, 136, 0.08);
 		}
 
 		&::after {
@@ -181,17 +199,23 @@
 	.empty-state {
 		text-align: center;
 		padding: 4rem 2rem;
-		color: #6c757d;
+		color: #64748b;
 
 		h3 {
-			color: #2c3e50;
+			color: #0f172a;
 			margin-bottom: 1rem;
 			font-size: 1.5rem;
+			font-weight: 700;
 		}
 
 		p {
 			margin-bottom: 2rem;
 			font-size: 1rem;
+			color: #64748b;
+		}
+
+		.btn-primary {
+			margin-top: 1rem;
 		}
 	}
 }
@@ -411,30 +435,42 @@
 	}
 
 	.stat-card {
-		background: #f8f9fa;
+		background: linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%);
 		padding: 1.5rem;
 		border-radius: 12px;
 		text-align: center;
-		border: 1px solid #e9ecef;
+		border: 1px solid #ccfbf1;
+		transition: all 0.3s ease;
+
+		&:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15);
+			border-color: #99f6e4;
+		}
 
 		h3 {
 			font-size: 2rem;
-			color: #007bff;
+			background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			background-clip: text;
 			margin-bottom: 0.5rem;
-			font-weight: bold;
+			font-weight: 700;
 		}
 
 		p {
-			color: #6c757d;
+			color: #64748b;
 			margin: 0;
+			font-weight: 500;
 		}
 	}
 }
 
 .recent-activity {
 	h3 {
-		color: #2c3e50;
+		color: #0f172a;
 		margin-bottom: 1rem;
+		font-weight: 700;
 	}
 
 	.activity-list {
@@ -443,7 +479,12 @@
 			justify-content: space-between;
 			align-items: center;
 			padding: 1rem;
-			border-bottom: 1px solid #f8f9fa;
+			border-bottom: 1px solid #f1f5f9;
+			transition: background-color 0.2s ease;
+
+			&:hover {
+				background-color: #f0fdfa;
+			}
 
 			&:last-child {
 				border-bottom: none;
@@ -451,13 +492,14 @@
 
 			.activity-info {
 				strong {
-					color: #2c3e50;
+					color: #0f172a;
 					display: block;
 					margin-bottom: 0.25rem;
+					font-weight: 600;
 				}
 
 				.activity-date {
-					color: #6c757d;
+					color: #64748b;
 					font-size: 0.9rem;
 				}
 			}
@@ -495,28 +537,29 @@
 	}
 
 	&.btn-secondary {
-		background: #6c757d;
+		background: #64748b;
 		color: white;
 		border: none;
 
 		&:hover {
-			background: #545b62;
+			background: #475569;
 			transform: translateY(-2px);
-			box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+			box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
 		}
 	}
 
 	&.btn-outline {
 		background: white;
-		color: #007bff;
-		border: 2px solid #007bff;
+		color: #0d9488;
+		border: 2px solid #0d9488;
 		box-shadow: none;
 
 		&:hover {
-			background: #007bff;
+			background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
 			color: white;
 			transform: translateY(-2px);
-			box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+			box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
+			border-color: #0d9488;
 		}
 	}
 
@@ -558,7 +601,7 @@
 
 		&.active {
 			border-bottom-color: #e9ecef;
-			border-left: 3px solid #007bff;
+			border-left: 3px solid #0d9488;
 		}
 	}
 

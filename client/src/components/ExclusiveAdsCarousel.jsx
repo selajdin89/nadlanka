@@ -77,6 +77,9 @@ const ExclusiveAdsCarousel = ({ products }) => {
 	}, []);
 
 	const formatPrice = (price, currency = "MKD") => {
+		if (!price || price === null) {
+			return t("createProduct.form.priceByAgreement") || "По договор";
+		}
 		return new Intl.NumberFormat("mk-MK", {
 			style: "currency",
 			currency: currency,
@@ -168,7 +171,7 @@ const ExclusiveAdsCarousel = ({ products }) => {
 									<p className="product-price">
 										{formatPrice(product.price, product.currency)}
 									</p>
-									<p className="product-location">{product.location}</p>
+									<p className="product-location">{product.region ? `${product.location}, ${product.region}` : product.location}</p>
 									<div className="product-meta">
 										<span className="product-category">
 											{translateCategory(product.category, t)}

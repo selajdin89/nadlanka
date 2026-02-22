@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
+import { macedonianCities } from "../utils/macedonianCities";
 import axios from "axios";
 import { translateCondition } from "../utils/productTranslations";
 import ProductImageSlider from "../components/ProductImageSlider";
@@ -211,15 +212,19 @@ const Profile = () => {
 								<label htmlFor="edit-location">
 									{t("common.location") || "Location"}
 								</label>
-								<input
-									type="text"
+								<CustomSelect
 									id="edit-location"
 									name="location"
 									value={editForm.location}
 									onChange={handleEditChange}
-									placeholder={
-										t("profile.locationPlaceholder") || "City, Country"
-									}
+									placeholder={t("profile.locationPlaceholder") ||
+										t("auth.locationPlaceholder") ||
+										"Изберете локација"}
+									searchable={true}
+									options={macedonianCities.slice(1).map((city) => ({
+										value: city.value,
+										label: city.label,
+									}))}
 								/>
 							</div>
 							<div className="form-actions">
@@ -317,7 +322,7 @@ const Profile = () => {
 												<p className="product-price">
 													{formatPrice(product.price, product.currency)}
 												</p>
-												<p className="product-location">{product.location}</p>
+												<p className="product-location">{product.region ? `${product.location}, ${product.region}` : product.location}</p>
 												<div className="product-meta">
 													<span className={`status status-${product.status}`}>
 														{translateStatus(product.status)}

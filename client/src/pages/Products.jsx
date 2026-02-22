@@ -9,6 +9,9 @@ import {
 } from "../utils/productTranslations";
 import ProductImageSlider from "../components/ProductImageSlider";
 import FavoriteButton from "../components/FavoriteButton";
+import { macedonianCities } from "../utils/macedonianCities";
+import CustomSelect from "../components/CustomSelect";
+import SearchBar from "../components/SearchBar";
 
 const Products = () => {
 	const { t, currentLanguage } = useLanguage();
@@ -23,9 +26,10 @@ const Products = () => {
 	const [categories, setCategories] = useState([]);
 	const [displayLimit, setDisplayLimit] = useState(12); // Minimum 3 rows (4 columns x 3 rows)
 	const [currentPage, setCurrentPage] = useState(1);
-	const [filters, setFilters] = useState({
+	const [localFilters, setLocalFilters] = useState({
 		search: searchParams.get("search") || "",
 		category: searchParams.get("category") || "",
+		subcategory: searchParams.get("subcategory") || "",
 		condition: searchParams.get("condition") || "",
 		minPrice: searchParams.get("minPrice") || "",
 		maxPrice: searchParams.get("maxPrice") || "",
@@ -35,13 +39,15 @@ const Products = () => {
 		sortOrder: searchParams.get("sortOrder") || "desc",
 		page: searchParams.get("page") || "1",
 	});
+	const [filters, setFilters] = useState(localFilters);
 
 	useEffect(() => {
 		const params = Object.fromEntries(searchParams.entries());
 		const newFilters = {
 			search: params.search || "",
 			category: params.category || "",
-			condition: params.condition || "",
+			subcategory: params.subcategory || "",
+			condition: mapConditionFromDatabase(params.condition) || "",
 			minPrice: params.minPrice || "",
 			maxPrice: params.maxPrice || "",
 			location: params.location || "",
@@ -50,6 +56,7 @@ const Products = () => {
 			sortOrder: params.sortOrder || "desc",
 			page: params.page || "1",
 		};
+		setLocalFilters(newFilters);
 		setFilters(newFilters);
 		const initialLimit = 12; // Minimum 3 rows
 		setDisplayLimit(initialLimit);
@@ -70,6 +77,38 @@ const Products = () => {
 		// 	likeNew: t("conditions.like_new"),
 		// });
 	}, [currentLanguage, t]);
+
+	// Map frontend condition values to database format
+	const mapConditionToDatabase = (condition) => {
+		if (!condition) return condition;
+		const conditionMap = {
+			new: "New",
+			"like_new": "Like New",
+			"like new": "Like New",
+			very_good: "Very Good",
+			"very good": "Very Good",
+			"very_good": "Very Good",
+			good: "Good",
+			fair: "Fair",
+			poor: "Poor",
+		};
+		const normalized = condition.toLowerCase().trim();
+		return conditionMap[normalized] || condition;
+	};
+
+	// Map database condition values back to frontend format (for URL params)
+	const mapConditionFromDatabase = (condition) => {
+		if (!condition) return condition;
+		const reverseMap = {
+			"new": "new",
+			"like new": "like_new",
+			"very good": "very_good",
+			"good": "good",
+			"fair": "fair",
+			"poor": "poor",
+		};
+		return reverseMap[condition.toLowerCase()] || condition;
+	};
 
 	const fetchProducts = async (
 		appliedFilters = filters,
@@ -95,7 +134,12 @@ const Products = () => {
 					key !== "sortBy" &&
 					key !== "sortOrder"
 				) {
-					params.append(key, value);
+					// Map condition value to database format
+					if (key === "condition") {
+						params.append(key, mapConditionToDatabase(value));
+					} else {
+						params.append(key, value);
+					}
 				}
 			});
 
@@ -149,30 +193,50 @@ const Products = () => {
 			if (v) newParams.set(k, v);
 		});
 		setSearchParams(newParams);
+		// Trigger fetch after updating URL params (the useEffect will handle it)
 	};
 
+	// Handle filter changes - only update local state, don't apply filters
 	const handleFilterChange = (key, value) => {
-		const newFilters = { ...filters, [key]: value, page: "1" };
-		updateFilters(newFilters);
+		const newLocalFilters = { ...localFilters, [key]: value };
+		setLocalFilters(newLocalFilters);
+	};
+
+	// Apply filters when button is clicked
+	const applyFilters = () => {
+		const filtersToApply = { ...localFilters, page: "1" };
+		setFilters(filtersToApply);
+		updateFilters(filtersToApply);
+		setDisplayLimit(12);
+		setCurrentPage(1);
+		// The useEffect watching searchParams will trigger fetchProducts
 	};
 
 	const handleSortChange = (combinedValue) => {
 		const [sortBy, sortOrder] = combinedValue.split("-");
 		const newFilters = {
-			...filters,
+			...localFilters,
 			sortBy,
 			sortOrder,
-			page: "1",
 		};
-		updateFilters(newFilters);
+		setLocalFilters(newFilters);
+		// Apply sort immediately (sorting is usually immediate)
+		const filtersToApply = { ...newFilters, page: "1" };
+		setFilters(filtersToApply);
+		updateFilters(filtersToApply);
 	};
 
 	const handlePageChange = (newPage) => {
-		const newFilters = { ...filters, page: newPage.toString() };
+		const newFilters = { ...localFilters, page: newPage.toString() };
+		setLocalFilters(newFilters);
+		setFilters(newFilters);
 		updateFilters(newFilters);
 	};
 
 	const formatPrice = (price, currency = "MKD") => {
+		if (!price || price === null) {
+			return t("createProduct.form.priceByAgreement") || "По договор";
+		}
 		return new Intl.NumberFormat("mk-MK", {
 			style: "currency",
 			currency: currency,
@@ -180,7 +244,7 @@ const Products = () => {
 	};
 
 	const clearFilters = () => {
-		setFilters({
+		const clearedFilters = {
 			search: "",
 			category: "",
 			condition: "",
@@ -191,7 +255,9 @@ const Products = () => {
 			sortBy: "createdAt",
 			sortOrder: "desc",
 			page: "1",
-		});
+		};
+		setLocalFilters(clearedFilters);
+		setFilters(clearedFilters);
 		setDisplayLimit(12);
 		setCurrentPage(1);
 		setSearchParams({});
@@ -226,90 +292,37 @@ const Products = () => {
 				)}
 			</div>
 
+			{/* Search Bar */}
+			<SearchBar
+				onSearch={(query, location) => {
+					const newFilters = {
+						...localFilters,
+						search: query.trim(),
+						location: location || localFilters.location,
+						page: "1",
+					};
+					setLocalFilters(newFilters);
+					// Apply filters immediately when searching
+					const filtersToApply = { ...newFilters };
+					setFilters(filtersToApply);
+					updateFilters(filtersToApply);
+				}}
+				onLocationChange={(location, currentSearch) => {
+					const newFilters = {
+						...localFilters,
+						location: location || "",
+						search: currentSearch || localFilters.search,
+						page: "1",
+					};
+					setLocalFilters(newFilters);
+					// Apply filters immediately when location changes
+					const filtersToApply = { ...newFilters };
+					setFilters(filtersToApply);
+					updateFilters(filtersToApply);
+				}}
+			/>
+
 			<div className="products-layout">
-				{/* Filters Sidebar */}
-				<aside className="filters-sidebar">
-					<div className="filters-header">
-						<h3>Filters</h3>
-						<button onClick={clearFilters} className="clear-filters">
-							{t("products.filter.clear")}
-						</button>
-					</div>
-
-					<div className="filter-group">
-						<label>{t("products.search.placeholder")}</label>
-						<input
-							type="text"
-							placeholder={t("products.search.placeholder")}
-							value={filters.search}
-							onChange={(e) => handleFilterChange("search", e.target.value)}
-						/>
-					</div>
-
-					<div className="filter-group">
-						<label>{t("products.filter.category")}</label>
-						<select
-							value={filters.category}
-							onChange={(e) => handleFilterChange("category", e.target.value)}
-						>
-							<option value="">{t("categories.all")}</option>
-							{categories.map((cat) => {
-								const translationKey = `categories.${getCategoryTranslationKey(
-									cat.value
-								)}`;
-								return (
-									<option key={cat.value} value={cat.value}>
-										{t(translationKey) || cat.label}
-									</option>
-								);
-							})}
-						</select>
-					</div>
-
-					<div className="filter-group">
-						<label>{t("products.filter.condition")}</label>
-						<select
-							value={filters.condition}
-							onChange={(e) => handleFilterChange("condition", e.target.value)}
-						>
-							<option value="">{t("conditions.all")}</option>
-							<option value="new">{t("conditions.new")}</option>
-							<option value="like_new">{t("conditions.like_new")}</option>
-							<option value="good">{t("conditions.good")}</option>
-							<option value="fair">{t("conditions.fair")}</option>
-							<option value="poor">{t("conditions.poor")}</option>
-						</select>
-					</div>
-
-					<div className="filter-group">
-						<label>{t("products.filter.priceRange")}</label>
-						<div className="price-inputs">
-							<input
-								type="number"
-								placeholder={t("form.min")}
-								value={filters.minPrice}
-								onChange={(e) => handleFilterChange("minPrice", e.target.value)}
-							/>
-							<input
-								type="number"
-								placeholder={t("form.max")}
-								value={filters.maxPrice}
-								onChange={(e) => handleFilterChange("maxPrice", e.target.value)}
-							/>
-						</div>
-					</div>
-
-					<div className="filter-group">
-						<label>{t("products.filter.location")}</label>
-						<input
-							type="text"
-							placeholder={t("form.enterLocation")}
-							value={filters.location}
-							onChange={(e) => handleFilterChange("location", e.target.value)}
-						/>
-					</div>
-				</aside>
-
 				{/* Products Grid */}
 				<main className="products-main">
 					<div className="products-toolbar">
@@ -317,27 +330,18 @@ const Products = () => {
 							{pagination.totalProducts} {t("form.productsFound")}
 						</div>
 						<div className="sort-controls">
-							<select
+							<CustomSelect
 								value={`${filters.sortBy}-${filters.sortOrder}`}
 								onChange={(e) => handleSortChange(e.target.value)}
-							>
-								<option value="createdAt-desc">
-									{t("products.filter.sortBy.newest")}
-								</option>
-								<option value="createdAt-asc">
-									{t("products.filter.sortBy.oldest")}
-								</option>
-								<option value="price-asc">
-									{t("products.filter.sortBy.priceLow")}
-								</option>
-								<option value="price-desc">
-									{t("products.filter.sortBy.priceHigh")}
-								</option>
-								<option value="views-desc">
-									{t("products.filter.sortBy.views")}
-								</option>
-								<option value="title-asc">{t("form.nameAZ")}</option>
-							</select>
+								options={[
+									{ value: "createdAt-desc", label: t("products.filter.sortBy.newest") || "Newest" },
+									{ value: "createdAt-asc", label: t("products.filter.sortBy.oldest") || "Oldest" },
+									{ value: "price-asc", label: t("products.filter.sortBy.priceLow") || "Price: Low to High" },
+									{ value: "price-desc", label: t("products.filter.sortBy.priceHigh") || "Price: High to Low" },
+									{ value: "views-desc", label: t("products.filter.sortBy.views") || "Most Viewed" },
+									{ value: "title-asc", label: t("form.nameAZ") || "Name: A-Z" },
+								]}
+							/>
 						</div>
 					</div>
 
@@ -370,7 +374,7 @@ const Products = () => {
 											<p className="product-price">
 												{formatPrice(product.price, product.currency)}
 											</p>
-											<p className="product-location">{product.location}</p>
+											<p className="product-location">{product.region ? `${product.location}, ${product.region}` : product.location}</p>
 											<div className="product-meta">
 												<span className="product-category">
 													{translateCategory(product.category, t)}

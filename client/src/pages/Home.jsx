@@ -1,14 +1,28 @@
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useLanguage } from "../contexts/LanguageContext";
 import {
 	translateCategory,
 	translateCondition,
+	getCategoryTranslationKey,
 } from "../utils/productTranslations";
 import ProductImageSlider from "../components/ProductImageSlider";
 import FavoriteButton from "../components/FavoriteButton";
 import ExclusiveAdsCarousel from "../components/ExclusiveAdsCarousel";
+import CategoriesModal from "../components/CategoriesModal";
+import CategoriesSidebar from "../components/CategoriesSidebar";
+import { macedonianCities } from "../utils/macedonianCities";
+import {
+	MapPin,
+	Grid3x3,
+	Menu,
+	Smartphone,
+	Car,
+	Home as HomeIcon,
+} from "lucide-react";
+import CustomSelect from "../components/CustomSelect";
+import SearchBar from "../components/SearchBar";
 import logo1 from "../assets/logomk.png";
 import logo2 from "../assets/logo-without-text.png";
 import logosvg from "../assets/logo-nadlanka-full-dark.svg";
@@ -16,24 +30,89 @@ import logosvg from "../assets/logo-nadlanka-full-dark.svg";
 const Home = () => {
 	const { t } = useLanguage();
 	const navigate = useNavigate();
-	const [searchQuery, setSearchQuery] = useState("");
+	const routerLocation = useLocation();
+	const [selectedLocation, setSelectedLocation] = useState(""); // Empty string = Entire Macedonia
 	const [allProducts, setAllProducts] = useState([]);
 	const [exclusiveProducts, setExclusiveProducts] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [loadingMore, setLoadingMore] = useState(false);
 	const [exclusiveLoading, setExclusiveLoading] = useState(true);
-	const [displayLimit, setDisplayLimit] = useState(16); // 4 rows x 4 columns (or 5 rows x 3 columns)
+	const [displayLimit, setDisplayLimit] = useState(15); // 3 rows x 5 columns initially
 	const [pagination, setPagination] = useState({});
+	const [sortBy, setSortBy] = useState("createdAt");
+	const [sortOrder, setSortOrder] = useState("desc");
 	const [stats, setStats] = useState({
 		totalProducts: 0,
 		totalUsers: 0,
 	});
+	const [isInitialMount, setIsInitialMount] = useState(true);
+	const [isCategoriesModalOpen, setIsCategoriesModalOpen] = useState(false);
+	const [isCategoriesSidebarOpen, setIsCategoriesSidebarOpen] = useState(false);
+	const [selectedCategory, setSelectedCategory] = useState(null);
+	const [
+		selectedCategoryForSubcategories,
+		setSelectedCategoryForSubcategories,
+	] = useState(null);
+	const [categories, setCategories] = useState([]);
+	const [categorySlideDirection, setCategorySlideDirection] = useState("");
+
+	// Reset function to clear all filters and state
+	const resetToHome = () => {
+		setSelectedLocation("");
+		setSortBy("createdAt");
+		setSortOrder("desc");
+		setDisplayLimit(15);
+		setIsInitialMount(true);
+		setSelectedCategory(null);
+		setSelectedCategoryForSubcategories(null);
+		setCategorySlideDirection("");
+		// Clear URL params
+		window.history.replaceState({}, "", "/");
+		// Refetch fresh data
+		fetchExclusiveProducts();
+		fetchAllProducts(15, 1, false);
+		fetchStats();
+		setIsInitialMount(false);
+	};
+
+	// Listen for reset event from logo click
+	useEffect(() => {
+		const handleReset = () => {
+			resetToHome();
+		};
+		window.addEventListener("resetToHome", handleReset);
+		return () => {
+			window.removeEventListener("resetToHome", handleReset);
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	// Reset when navigating to home without search params
+	useEffect(() => {
+		if (routerLocation.pathname === "/" && !routerLocation.search) {
+			// If we're on home page with no params, ensure clean state
+			if (selectedLocation || sortBy !== "createdAt" || sortOrder !== "desc") {
+				resetToHome();
+			}
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [routerLocation.pathname, routerLocation.search]);
 
 	useEffect(() => {
 		fetchExclusiveProducts();
-		fetchAllProducts(16); // Initial load: 16 products (4-5 rows)
+		fetchAllProducts(15); // Initial load: 15 products (3 rows x 5 columns)
 		fetchStats();
+		setIsInitialMount(false);
 	}, []);
+
+	// Refetch products when location or sort changes (but not on initial mount)
+	useEffect(() => {
+		if (!isInitialMount) {
+			fetchAllProducts(15, 1, false);
+			setDisplayLimit(15); // Reset display limit when location or sort changes
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [selectedLocation, sortBy, sortOrder]);
 
 	const fetchExclusiveProducts = async () => {
 		try {
@@ -55,9 +134,19 @@ const Home = () => {
 				setLoading(true);
 			}
 			// Note: loadingMore is set in handleShowMore before calling this
-			const response = await axios.get(
-				`/api/products?limit=${limit}&page=${page}&sortBy=createdAt&sortOrder=desc`
-			);
+			const params = new URLSearchParams({
+				limit: limit.toString(),
+				page: page.toString(),
+				sortBy: sortBy || "createdAt",
+				sortOrder: sortOrder || "desc",
+			});
+
+			// Add location filter if selected
+			if (selectedLocation) {
+				params.append("location", selectedLocation);
+			}
+
+			const response = await axios.get(`/api/products?${params.toString()}`);
 			if (append) {
 				// Append new products to existing ones, filtering out duplicates
 				setAllProducts((prev) => {
@@ -68,7 +157,7 @@ const Home = () => {
 					return [...prev, ...newProducts];
 				});
 			} else {
-				// Replace products (initial load)
+				// Replace products (initial load or sort change)
 				setAllProducts(response.data.products);
 			}
 			setPagination(response.data.pagination || {});
@@ -83,7 +172,7 @@ const Home = () => {
 	};
 
 	const handleShowMore = async () => {
-		const limit = 12;
+		const limit = 15; // Load 15 more products (3 more rows x 5 columns)
 		// Calculate the next page: skip = (page - 1) * limit
 		// We want to skip allProducts.length products
 		// So: allProducts.length = (page - 1) * limit
@@ -113,6 +202,9 @@ const Home = () => {
 	};
 
 	const formatPrice = (price, currency = "MKD") => {
+		if (!price || price === null) {
+			return t("createProduct.form.priceByAgreement") || "По договор";
+		}
 		return new Intl.NumberFormat("mk-MK", {
 			style: "currency",
 			currency: currency,
@@ -122,265 +214,259 @@ const Home = () => {
 	const handleSearch = (e) => {
 		e.preventDefault();
 		if (searchQuery.trim()) {
-			navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+			// Include location in search if selected
+			const params = new URLSearchParams();
+			params.append("search", searchQuery.trim());
+			if (selectedLocation) {
+				params.append("location", selectedLocation);
+			}
+			navigate(`/products?${params.toString()}`);
 			setSearchQuery("");
 		}
 	};
 
+	const handleLocationChange = (e) => {
+		const location = e.target.value;
+		setSelectedLocation(location);
+
+		// If user has typed something in search, navigate to products with both search and location
+		const currentSearch =
+			searchInputRef.current?.value?.trim() || searchQuery.trim();
+		if (currentSearch) {
+			const params = new URLSearchParams();
+			params.append("search", currentSearch);
+			if (location) {
+				params.append("location", location);
+			}
+			navigate(`/products?${params.toString()}`);
+			setSearchQuery("");
+		}
+		// If no search query, just update location state (for home page filtering)
+	};
+
 	return (
 		<div className="home-container">
-			{/* Search Bar */}
-			<section className="search-section">
-				<form className="search-form" onSubmit={handleSearch}>
-					<div className="search-input-container">
-						<input
-							type="text"
-							placeholder={t("nav.search.placeholder")}
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-							className="search-input"
-						/>
-						<button type="submit" className="search-button">
-							<svg
-								width="20"
-								height="20"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="2"
-							>
-								<circle cx="11" cy="11" r="8"></circle>
-								<path d="m21 21-4.35-4.35"></path>
-							</svg>
-						</button>
-					</div>
-				</form>
-			</section>
-
-			{/* Action Buttons */}
-			<section className="action-buttons-section">
-				<div className="action-buttons">
-					<Link to="/products" className="btn btn-primary">
-						{t("home.hero.browse")}
-					</Link>
-					<Link to="/create-product" className="btn btn-secondary">
-						{t("home.hero.sell")}
-					</Link>
-				</div>
-			</section>
-
-			{/* Categories */}
-			<section className="categories-section">
-				<div className="category-nav">
-					<Link
-						to="/category/electronics"
-						className="category-nav-item"
-						title={t("home.categories.electronics")}
-					>
-						<div className="category-icon">
-							<svg
-								width="28"
-								height="28"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="2"
-							>
-								<rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-								<line x1="8" y1="21" x2="16" y2="21" />
-								<line x1="12" y1="17" x2="12" y2="21" />
-							</svg>
-						</div>
-						<span>{t("home.categories.electronics")}</span>
-					</Link>
-					<Link
-						to="/category/cars"
-						className="category-nav-item"
-						title={t("home.categories.cars")}
-					>
-						<div className="category-icon">
-							<svg
-								width="28"
-								height="28"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="2"
-							>
-								<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18.7 8.3c-.3-.8-1-1.3-1.9-1.3H7.2c-.9 0-1.6.5-1.9 1.3L3.5 11.1C2.7 11.3 2 12.1 2 13v3c0 .6.4 1 1 1h2" />
-								<circle cx="7" cy="17" r="2" />
-								<circle cx="17" cy="17" r="2" />
-								<path d="M7 17H17" />
-							</svg>
-						</div>
-						<span>{t("home.categories.cars")}</span>
-					</Link>
-					<Link
-						to="/category/real-estate"
-						className="category-nav-item"
-						title={t("home.categories.realEstate")}
-					>
-						<div className="category-icon">
-							<svg
-								width="28"
-								height="28"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="2"
-							>
-								<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-								<polyline points="9,22 9,12 15,12 15,22" />
-							</svg>
-						</div>
-						<span>{t("home.categories.realEstate")}</span>
-					</Link>
-					<Link
-						to="/category/furniture"
-						className="category-nav-item"
-						title={t("home.categories.furniture")}
-					>
-						<div className="category-icon">
-							<svg
-								width="28"
-								height="28"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="2"
-							>
-								<rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-								<rect x="9" y="9" width="6" height="6" />
-								<line x1="9" y1="1" x2="9" y2="4" />
-								<line x1="15" y1="1" x2="15" y2="4" />
-								<line x1="9" y1="20" x2="9" y2="23" />
-								<line x1="15" y1="20" x2="15" y2="23" />
-							</svg>
-						</div>
-						<span>{t("home.categories.furniture")}</span>
-					</Link>
-					<Link
-						to="/category/services"
-						className="category-nav-item"
-						title={t("home.categories.services")}
-					>
-						<div className="category-icon">
-							<svg
-								width="28"
-								height="28"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="2"
-							>
-								<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-							</svg>
-						</div>
-						<span>{t("home.categories.services")}</span>
-					</Link>
-				</div>
-			</section>
-
-			{/* Exclusive Ads Carousel */}
-			<section className="exclusive-section">
-				<div className="section-header">
-					<h2>{t("home.exclusive.title") || "Exclusive Ads"}</h2>
-				</div>
-				{exclusiveLoading ? (
-					<div className="loading">{t("home.featured.loading")}</div>
-				) : (
-					<ExclusiveAdsCarousel products={exclusiveProducts} />
+			<div className="home-layout">
+				{/* Categories Sidebar */}
+				{isCategoriesSidebarOpen && (
+					<CategoriesSidebar
+						onClose={() => setIsCategoriesSidebarOpen(false)}
+					/>
 				)}
-			</section>
 
-			{/* All Products */}
-			<section className="featured-section">
-				<div className="section-header">
-					<h2>{t("nav.products") || "All Ads"}</h2>
-				</div>
+				<div className="home-main-content">
+					{/* Search Bar and Location Filter */}
+					<SearchBar
+						onSearch={(query, location) => {
+							if (query.trim()) {
+								const params = new URLSearchParams();
+								params.append("search", query.trim());
+								if (location) {
+									params.append("location", location);
+								}
+								navigate(`/products?${params.toString()}`);
+							}
+						}}
+						onLocationChange={(location, currentSearch) => {
+							setSelectedLocation(location);
+							if (currentSearch) {
+								const params = new URLSearchParams();
+								params.append("search", currentSearch);
+								if (location) {
+									params.append("location", location);
+								}
+								navigate(`/products?${params.toString()}`);
+							} else {
+								// Refetch products when location changes
+								fetchAllProducts(15, 1, false);
+								setDisplayLimit(15);
+							}
+						}}
+					/>
 
-				{loading ? (
-					<div className="loading">{t("home.featured.loading")}</div>
-				) : (
-					<>
-						<div className="products-grid">
-							{allProducts.map((product) => (
-								<Link
-									key={product._id}
-									to={`/products/${product._id}`}
-									className="product-card"
-								>
-									<div className="product-image-wrapper">
-										<ProductImageSlider
-											images={product.images}
-											title={product.title}
-										/>
-										<div className="favorite-btn-wrapper">
-											<FavoriteButton productId={product._id} size="small" />
-										</div>
-									</div>
-									<div className="product-info">
-										<h3 className="product-title">{product.title}</h3>
-										<p className="product-price">
-											{formatPrice(product.price, product.currency)}
-										</p>
-										<p className="product-location">{product.location}</p>
-										<div className="product-meta">
-											<span className="product-category">
-												{translateCategory(product.category, t)}
-											</span>
-											<span className="product-condition">
-												{translateCondition(product.condition, t)}
-											</span>
-										</div>
-									</div>
-								</Link>
-							))}
+					{/* Action Buttons */}
+					<section className="action-buttons-section">
+						<div className="action-buttons">
+							<Link to="/products" className="btn btn-primary">
+								{t("home.hero.browse")}
+							</Link>
+							<Link to="/create-product" className="btn btn-secondary">
+								{t("home.hero.sell")}
+							</Link>
 						</div>
+					</section>
 
-						{/* Show More Button */}
-						{((allProducts.length >= displayLimit &&
-							pagination.totalProducts > allProducts.length) ||
-							loadingMore) && (
-							<div className="show-more-container">
-								<button
-									onClick={handleShowMore}
-									className="show-more-btn"
-									disabled={loadingMore}
-								>
-									{loadingMore ? (
-										<span className="show-more-content">
-											<span className="spinner-small"></span>
-											<span>{t("common.loading") || "Loading..."}</span>
-										</span>
-									) : (
-										t("products.showMore") || "Show More Ads"
-									)}
-								</button>
+					{/* Categories */}
+					<section className="categories-section">
+						<div className="category-nav">
+							<Link
+								to="/category/electronics"
+								className="category-nav-item"
+								title={t("home.categories.electronics")}
+							>
+								<div className="category-icon">
+									<Smartphone size={24} />
+								</div>
+								<span>{t("home.categories.electronics")}</span>
+							</Link>
+							<Link
+								to="/category/vehicles"
+								className="category-nav-item"
+								title={t("home.categories.cars")}
+							>
+								<div className="category-icon">
+									<Car size={24} />
+								</div>
+								<span>{t("home.categories.cars")}</span>
+							</Link>
+							<Link
+								to="/category/real-estate"
+								className="category-nav-item"
+								title={t("home.categories.realEstate")}
+							>
+								<div className="category-icon">
+									<HomeIcon size={24} />
+								</div>
+								<span>{t("home.categories.realEstate")}</span>
+							</Link>
+							<button
+								onClick={() => setIsCategoriesModalOpen(true)}
+								className="category-nav-item"
+								title={t("home.categories.allCategories") || "All Categories"}
+							>
+								<div className="category-icon">
+									<Grid3x3 size={24} />
+								</div>
+								<span>
+									{t("home.categories.allCategories") || "Categories"}
+								</span>
+							</button>
+						</div>
+					</section>
+
+					{/* All Products */}
+					<section className="featured-section">
+						<div className="section-header">
+							<h2>{t("nav.products") || "All Ads"}</h2>
+							<div className="sort-controls">
+								<CustomSelect
+									value={`${sortBy}-${sortOrder}`}
+									onChange={(e) => {
+										const [newSortBy, newSortOrder] = e.target.value.split("-");
+										setSortBy(newSortBy);
+										setSortOrder(newSortOrder);
+										// Reset to first page when sort changes
+										setDisplayLimit(15);
+										setIsInitialMount(false);
+									}}
+									options={[
+										{
+											value: "createdAt-desc",
+											label: t("products.filter.sortBy.newest") || "Newest",
+										},
+										{
+											value: "createdAt-asc",
+											label: t("products.filter.sortBy.oldest") || "Oldest",
+										},
+										{
+											value: "price-asc",
+											label:
+												t("products.filter.sortBy.priceLow") ||
+												"Price: Low to High",
+										},
+										{
+											value: "price-desc",
+											label:
+												t("products.filter.sortBy.priceHigh") ||
+												"Price: High to Low",
+										},
+										{
+											value: "views-desc",
+											label: t("products.filter.sortBy.views") || "Most Viewed",
+										},
+										{
+											value: "title-asc",
+											label: t("form.nameAZ") || "Name: A-Z",
+										},
+									]}
+								/>
 							</div>
+						</div>
+
+						{loading ? (
+							<div className="loading-container">
+								<div className="loading-spinner"></div>
+								<p>{t("common.loading") || "Loading..."}</p>
+							</div>
+						) : allProducts.length === 0 ? (
+							<div className="no-products">
+								<p>{t("home.noProducts") || "No products found"}</p>
+							</div>
+						) : (
+							<>
+								<div className="products-grid">
+									{allProducts.slice(0, displayLimit).map((product) => (
+										<div key={product._id} className="product-card">
+											<Link to={`/products/${product._id}`}>
+												<ProductImageSlider
+													images={product.images || []}
+													productId={product._id}
+												/>
+												<div className="product-info">
+													<h3 className="product-title">{product.title}</h3>
+													<p className="product-price">
+														{formatPrice(product.price, product.currency)}
+													</p>
+													<p className="product-location">
+														{product.location || t("common.unknown")}
+													</p>
+												</div>
+											</Link>
+											<FavoriteButton
+												productId={product._id}
+												isFavorite={product.isFavorite || false}
+											/>
+										</div>
+									))}
+								</div>
+								{((allProducts.length >= displayLimit &&
+									pagination.totalProducts > allProducts.length) ||
+									loadingMore) && (
+									<div className="show-more-container">
+										<button
+											onClick={handleShowMore}
+											className="show-more-btn"
+											disabled={loadingMore}
+										>
+											{loadingMore ? (
+												<span className="show-more-content">
+													<span className="spinner-small"></span>
+													<span>{t("common.loading") || "Loading..."}</span>
+												</span>
+											) : (
+												t("products.showMore") || "Show More Ads"
+											)}
+										</button>
+									</div>
+								)}
+							</>
 						)}
-					</>
-				)}
-			</section>
+					</section>
+				</div>
+			</div>
 
 			{/* Footer */}
 			<footer className="home-footer">
 				<div className="footer-content">
 					<div className="footer-brand">
-						<img
-							src={logosvg}
-							alt="NaDlanka"
-							// width={140}
-							// height={70}
-							// style={{ objectFit: "cover" }}
-						/>
+						<img src={logosvg} alt="NaDlanka" />
 						<p>{t("home.footer.tagline") || "Your local marketplace"}</p>
 					</div>
 					<div className="footer-social">
 						<h4>{t("home.footer.followUs") || "Follow Us"}</h4>
 						<div className="social-links">
 							<a
-								href="https://www.facebook.com"
+								href="https://www.facebook.com/profile.php?id=61580939143690"
 								target="_blank"
 								rel="noopener noreferrer"
 								className="social-link facebook"
@@ -425,6 +511,12 @@ const Home = () => {
 					</p>
 				</div>
 			</footer>
+
+			{/* Categories Modal (for mobile) */}
+			<CategoriesModal
+				isOpen={isCategoriesModalOpen}
+				onClose={() => setIsCategoriesModalOpen(false)}
+			/>
 		</div>
 	);
 };

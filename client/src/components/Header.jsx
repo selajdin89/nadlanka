@@ -122,7 +122,20 @@ const Header = ({ onToggleFavorites }) => {
 				{/* Left Section */}
 				<div className="nav-left">
 					{/* Logo */}
-					<Link to="/" className="logo" onClick={closeMobileMenu}>
+					<Link
+						to="/"
+						className="logo"
+						onClick={(e) => {
+							closeMobileMenu();
+							// Force a full refresh by navigating with replace and clearing all state
+							if (location.pathname !== "/" || location.search) {
+								e.preventDefault();
+								navigate("/", { replace: true });
+								// Dispatch a custom event to notify components to reset
+								window.dispatchEvent(new CustomEvent("resetToHome"));
+							}
+						}}
+					>
 						<span className="logo-text">
 							<img
 								// width={125}
@@ -177,14 +190,14 @@ const Header = ({ onToggleFavorites }) => {
 							</button>
 						)}
 
-						<Link
+						{/* <Link
 							to="/about"
 							className={`nav-link ${
 								location.pathname === "/about" ? "active" : ""
 							}`}
 						>
 							<span>{t("nav.about")}</span>
-						</Link>
+						</Link> */}
 
 						{!loading && !isAuthenticated && (
 							<>
@@ -340,7 +353,7 @@ const Header = ({ onToggleFavorites }) => {
 							<span>{t("nav.sell")}</span>
 						</Link>
 
-						<Link
+						{/* <Link
 							to="/about"
 							className={`nav-link ${
 								location.pathname === "/about" ? "active" : ""
@@ -360,7 +373,7 @@ const Header = ({ onToggleFavorites }) => {
 								<line x1="12" y1="17" x2="12.01" y2="17"></line>
 							</svg>
 							<span>{t("nav.about")}</span>
-						</Link>
+						</Link> */}
 					</div>
 
 					{/* Favorites Button */}

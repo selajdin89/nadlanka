@@ -1,0 +1,88 @@
+@import "../styles/variables";
+
+.ai-generator {
+	background: linear-gradient(135deg, #f0fdfa 0%, #e0f2f1 100%);
+	border: 2px dashed $accent-color;
+	border-radius: 12px;
+	padding: 1.5rem;
+	margin-bottom: 1.5rem;
+	transition: all 0.3s ease;
+
+	&:hover {
+		border-color: $accent-highlight;
+		background: linear-gradient(135deg, #e0f2f1 0%, #d1fae5 100%);
+	}
+
+	.ai-generator-header {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-bottom: 0.5rem;
+
+		h4 {
+			margin: 0;
+			font-size: 1.1rem;
+			color: $accent-color;
+			font-weight: 600;
+		}
+
+		svg {
+			color: $accent-color;
+		}
+	}
+
+	.ai-generator-description {
+		font-size: 0.9rem;
+		color: #6b7280;
+		margin-bottom: 1rem;
+		line-height: 1.5;
+	}
+
+	.ai-generate-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		width: 100%;
+		padding: 0.75rem 1.5rem;
+		background: linear-gradient(135deg, $accent-color, $accent-highlight);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-size: 1rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.3s ease;
+
+		&:hover:not(:disabled) {
+			transform: translateY(-2px);
+			box-shadow: 0 4px 12px rgba($accent-color, 0.3);
+		}
+
+		&:disabled {
+			opacity: 0.6;
+			cursor: not-allowed;
+		}
+
+		.spinner {
+			animation: spin 1s linear infinite;
+		}
+	}
+
+	.ai-generator-hint {
+		margin-top: 0.75rem;
+		font-size: 0.85rem;
+		color: #9ca3af;
+		font-style: italic;
+	}
+}
+
+@keyframes spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+

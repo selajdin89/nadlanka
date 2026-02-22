@@ -86,3 +86,116 @@
 	font-weight: 400 !important;
 	line-height: 1 !important;
 }
+
+// Global Dropdown/Select Styles
+select {
+	width: 100%;
+	padding: 0.75rem 3rem 0.75rem 1rem !important;
+	border: 2px solid #e9ecef;
+	border-radius: 8px;
+	font-size: 1rem;
+	font-family: inherit;
+	background-color: white !important;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5' stroke='%236c757d' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+	background-repeat: no-repeat !important;
+	background-position: right 0.75rem center !important;
+	background-size: 20px 20px !important;
+	appearance: none !important;
+	-webkit-appearance: none !important;
+	-moz-appearance: none !important;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	color: #2c3e50;
+	line-height: 1.5;
+
+	&:hover {
+		background-color: #f8f9fa !important;
+		box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15),
+			0 2px 4px rgba(0, 0, 0, 0.08) !important;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5' stroke='%2310b981' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+		transform: translateY(-1px);
+	}
+
+	&:focus {
+		outline: none;
+		background-color: white !important;
+		box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2),
+			0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5' stroke='%2310b981' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+	}
+
+	&:disabled {
+		background-color: #f8f9fa !important;
+		color: #9ca3af;
+		cursor: not-allowed;
+		opacity: 0.6;
+		border-color: #e9ecef;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5' stroke='%239ca3af' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+	}
+
+	// Style the options (note: browser limitations apply, but we can style what's possible)
+	option {
+		padding: 0.75rem 1rem;
+		background-color: white;
+		color: #2c3e50;
+		cursor: pointer;
+		font-size: 1rem;
+		line-height: 1.5;
+		min-height: 2.5rem;
+		display: flex;
+		align-items: center;
+
+		&:checked {
+			background-color: #10b981 !important;
+			color: white !important;
+			font-weight: 500;
+		}
+
+		&:disabled {
+			color: #9ca3af;
+			cursor: not-allowed;
+			opacity: 0.6;
+		}
+	}
+
+	// Placeholder option styling
+	option[value=""] {
+		color: #9ca3af;
+		font-style: italic;
+	}
+}
+
+// Enhanced dropdown styling for better cross-browser support
+select::-ms-expand {
+	display: none;
+}
+
+// Webkit browsers
+select::-webkit-inner-spin-button,
+select::-webkit-outer-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+// Override browser default selection colors to match green theme
+// Note: Browser support for styling the dropdown list is limited
+// These styles attempt to change the selection highlight color
+select option:checked {
+	background: linear-gradient(#10b981, #10b981);
+	background-color: #10b981 !important;
+	color: white !important;
+}
+
+// Try to override blue selection with green
+select option:hover {
+	background-color: #d1fae5 !important;
+	color: #065f46 !important;
+}
+
+// Additional attempts to override blue selection color (browser-dependent)
+@supports (-webkit-appearance: none) {
+	select option:checked {
+		background-color: #10b981 !important;
+		color: white !important;
+	}
+}
