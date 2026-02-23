@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -940,6 +940,26 @@ const CreateProduct = () => {
 			setLoading(false);
 		}
 	};
+
+	// Require verified email to create an ad
+	if (!authLoading && isAuthenticated && user && !user.isVerified) {
+		return (
+			<div className="create-product-container">
+				<div className="create-product-verify-required">
+					<div className="create-product-verify-required-card">
+						<h1>{t("createProduct.verifyRequired.title")}</h1>
+						<p>{t("createProduct.verifyRequired.message")}</p>
+						<Link to="/verify-email" className="create-product-verify-link">
+							{t("auth.verifyEmail.title")}
+						</Link>
+						<Link to="/" className="create-product-verify-link secondary">
+							{t("auth.verifyEmail.goHome")}
+						</Link>
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	// Category Type Selection Screen
 	if (showCategoryTypeSelection && !formData.categoryType) {

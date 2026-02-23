@@ -1365,6 +1365,14 @@ app.get("/api/products/:id", async (req, res) => {
 // Create a new product
 app.post("/api/products", authenticateToken, async (req, res) => {
 	try {
+		const user = await User.findById(req.user.userId);
+		if (!user) return res.status(404).json({ error: "User not found" });
+		if (!user.isVerified) {
+			return res.status(403).json({
+				error: "You need to verify your email to create an ad. Please check your inbox for the verification link.",
+			});
+		}
+
 		let {
 			title,
 			description,

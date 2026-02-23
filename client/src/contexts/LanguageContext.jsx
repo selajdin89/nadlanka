@@ -476,6 +476,8 @@ const translations = {
 		// Create Product page
 		"createProduct.title": "Create New Ad",
 		"createProduct.editTitle": "Edit Ad",
+		"createProduct.verifyRequired.title": "Verify your email to create an ad",
+		"createProduct.verifyRequired.message": "To create an ad you need to verify your email address. Check your inbox for the verification link or use the button below.",
 		"createProduct.form.title": "Ad Title",
 		"createProduct.form.title.placeholder": "Enter ad title",
 		"createProduct.form.description": "Description",
@@ -1293,6 +1295,8 @@ const translations = {
 		// Create Product page
 		"createProduct.title": "Krijo Oglas të Ri",
 		"createProduct.editTitle": "Ndrysho Oglasin",
+		"createProduct.verifyRequired.title": "Verifikoni email-in tuaj për të krijuar një oglas",
+		"createProduct.verifyRequired.message": "Për të krijuar një oglas duhet të verifikoni adresën e email-it. Kontrolloni postën tuaj për lidhjen e verifikimit ose përdorni butonin më poshtë.",
 		"createProduct.form.title": "Titulli i Oglasit",
 		"createProduct.form.title.placeholder": "Shkruani titullin e produktit",
 		"createProduct.form.description": "Përshkrimi",
@@ -2102,6 +2106,8 @@ const translations = {
 		// Create Product page
 		"createProduct.title": "Креирај Нов Оглас",
 		"createProduct.editTitle": "Уреди Оглас",
+		"createProduct.verifyRequired.title": "Потврдете ја е-поштата за да креирате оглас",
+		"createProduct.verifyRequired.message": "За да креирате оглас треба да ја потврдите вашата е-пошта. Проверете ја поштата за линкот за верификација или користете го копчето подолу.",
 		"createProduct.form.title": "Наслов на Огласот",
 		"createProduct.form.title.placeholder": "Внесете го насловот на огласот",
 		"createProduct.form.description": "Опис",

@@ -6,6 +6,52 @@
 	margin: 0 auto;
 }
 
+// Verify email required to create ad
+.create-product-verify-required {
+	min-height: 50vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 2rem;
+}
+.create-product-verify-required-card {
+	max-width: 440px;
+	text-align: center;
+	background: var(--card-bg, #fff);
+	border-radius: 12px;
+	padding: 2.5rem;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+	border: 1px solid var(--border-color, #e2e8f0);
+	h1 {
+		font-size: 1.5rem;
+		color: var(--text-primary, #1e293b);
+		margin: 0 0 1rem 0;
+	}
+	p {
+		color: var(--text-secondary, #475569);
+		margin: 0 0 1.5rem 0;
+		line-height: 1.5;
+	}
+}
+.create-product-verify-link {
+	display: inline-block;
+	margin: 0.5rem;
+	padding: 0.6rem 1.2rem;
+	background: var(--primary, #166534);
+	color: #fff;
+	border-radius: 8px;
+	text-decoration: none;
+	font-weight: 500;
+	&:hover {
+		opacity: 0.9;
+	}
+	&.secondary {
+		background: transparent;
+		color: var(--primary, #166534);
+		border: 1px solid var(--primary, #166534);
+	}
+}
+
 // Mode Selection
 .mode-selection {
 	text-align: center;
