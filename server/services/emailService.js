@@ -23,11 +23,14 @@ const createTransporter = () => {
 			},
 		});
 	} else if (process.env.EMAIL_HOST) {
-		// Custom SMTP configuration (for other providers)
+		// Custom SMTP (SendGrid, Mailgun, etc.). Use 2525 if 587 is blocked (e.g. Render free tier).
+		const port = parseInt(process.env.EMAIL_PORT, 10) || 587;
 		return nodemailer.createTransport({
 			host: process.env.EMAIL_HOST,
-			port: process.env.EMAIL_PORT || 587,
-			secure: process.env.EMAIL_SECURE === "true", // true for 465, false for other ports
+			port,
+			secure: process.env.EMAIL_SECURE === "true",
+			requireTLS: port === 587 || port === 2525,
+			connectionTimeout: 15000,
 			auth: {
 				user: process.env.EMAIL_USER,
 				pass: process.env.EMAIL_PASS,

@@ -58,6 +58,7 @@ function App() {
 										<Route path="/chat" element={<Chat />} />
 										<Route path="/login" element={<Login />} />
 										<Route path="/register" element={<Register />} />
+										<Route path="/verify-email" element={<VerifyEmail />} />
 										<Route path="/admin" element={<AdminDashboard />} />
 									</Routes>
 								</main>

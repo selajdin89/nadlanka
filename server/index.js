@@ -727,14 +727,24 @@ app.post("/api/auth/resend-verification", authenticateToken, async (req, res) =>
 				emailErr.code === "EMAIL_NOT_CONFIGURED"
 					? "Verification emails are not configured on this server. Please contact support."
 					: "Could not send verification email. Please try again later or contact support.";
-			// Include server error detail so user/support can see the real cause (e.g. Invalid login)
-			const detail = emailErr.message || (emailErr.response ? String(emailErr.response) : "");
-			return res.status(500).json({ error: message, detail: detail.substring(0, 200) });
+			// Build detail from Nodemailer/SendGrid (message, response, responseCode)
+			let detail = emailErr.message || "";
+			if (emailErr.response) {
+				const r = emailErr.response;
+				detail = (r.message || (typeof r === "string" ? r : "")).trim() || detail;
+				if (r.responseCode) detail = `Code ${r.responseCode}: ${detail}`;
+			}
+			detail = (detail || "Unknown error").substring(0, 350);
+			return res.status(500).json({ error: message, detail });
 		}
 		res.json({ message: "Verification email sent" });
 	} catch (error) {
 		console.error("Resend verification error:", error);
-		res.status(500).json({ error: "Failed to resend verification email" });
+		const detail = error.message ? String(error.message).substring(0, 200) : "";
+		res.status(500).json({
+			error: "Failed to resend verification email",
+			detail: detail || undefined,
+		});
 	}
 });
 
