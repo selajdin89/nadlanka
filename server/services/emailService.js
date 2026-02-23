@@ -4,7 +4,12 @@ const nodemailer = require("nodemailer");
 const isEmailConfigured = () => {
 	const isGmail = process.env.EMAIL_USER?.includes("@gmail.com");
 	if (isGmail && process.env.EMAIL_USER && process.env.EMAIL_PASS) return true;
-	if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) return true;
+	if (
+		process.env.EMAIL_HOST &&
+		process.env.EMAIL_USER &&
+		process.env.EMAIL_PASS
+	)
+		return true;
 	return false;
 };
 
@@ -39,7 +44,7 @@ const createTransporter = () => {
 	} else {
 		// Fallback to test email service for development
 		console.warn(
-			"⚠️  Using test email service. Configure real email credentials for production."
+			"⚠️  Using test email service. Configure real email credentials for production.",
 		);
 		return nodemailer.createTransport({
 			host: "smtp.ethereal.email",
@@ -60,9 +65,7 @@ const sendMessageNotificationEmail = async (messageData) => {
 
 		// Email template for seller notification
 		const mailOptions = {
-			from: `"NaDlanka Marketplace" <${
-				process.env.EMAIL_FROM || "noreply@nadlanka.com"
-			}>`,
+			from: `"NaDlanka" <${process.env.EMAIL_FROM || "noreply@nadlanka.com"}>`,
 			to: messageData.seller.email,
 			subject: `New message about your product: ${messageData.product.title}`,
 			html: `
@@ -79,8 +82,8 @@ const sendMessageNotificationEmail = async (messageData) => {
 						</div>
 						<div style="margin-bottom: 10px;">
 							<strong>Price:</strong> ${messageData.product.currency} ${
-				messageData.product.price
-			}
+								messageData.product.price
+							}
 						</div>
 					</div>
 					
@@ -110,7 +113,7 @@ const sendMessageNotificationEmail = async (messageData) => {
 					
 					<div style="text-align: center; padding: 20px; background: #f8fafc; border-radius: 8px;">
 						<p style="margin: 0; color: #64748b; font-size: 14px;">
-							This message was sent through NaDlanka Marketplace.<br>
+							This message was sent through NaDlanka.<br>
 							Please reply directly to this email to contact the buyer.
 						</p>
 					</div>
@@ -147,9 +150,7 @@ const sendMessageConfirmationEmail = async (messageData) => {
 		const transporter = createTransporter();
 
 		const mailOptions = {
-			from: `"NaDlanka Marketplace" <${
-				process.env.EMAIL_FROM || "noreply@nadlanka.com"
-			}>`,
+			from: `"NaDlanka" <${process.env.EMAIL_FROM || "noreply@nadlanka.com"}>`,
 			to: messageData.senderEmail,
 			subject: `Message sent successfully - ${messageData.product.title}`,
 			html: `
@@ -166,8 +167,8 @@ const sendMessageConfirmationEmail = async (messageData) => {
 						</div>
 						<div style="margin-bottom: 10px;">
 							<strong>Price:</strong> ${messageData.product.currency} ${
-				messageData.product.price
-			}
+								messageData.product.price
+							}
 						</div>
 						<div style="margin-bottom: 10px;">
 							<strong>Seller:</strong> ${messageData.seller.name}
@@ -217,7 +218,7 @@ The seller will receive your message and should reply soon.
 const sendVerificationEmail = async (toEmail, userName, verificationUrl) => {
 	if (!isEmailConfigured()) {
 		const err = new Error(
-			"Email is not configured. Set EMAIL_USER and EMAIL_PASS (use Gmail App Password for Gmail) in server .env so verification emails can be sent."
+			"Email is not configured. Set EMAIL_USER and EMAIL_PASS (use Gmail App Password for Gmail) in server .env so verification emails can be sent.",
 		);
 		err.code = "EMAIL_NOT_CONFIGURED";
 		throw err;
@@ -225,11 +226,9 @@ const sendVerificationEmail = async (toEmail, userName, verificationUrl) => {
 	try {
 		const transporter = createTransporter();
 		const mailOptions = {
-			from: `"NaDlanka Marketplace" <${
-				process.env.EMAIL_FROM || "noreply@nadlanka.com"
-			}>`,
+			from: `"NaDlanka" <${process.env.EMAIL_FROM || "noreply@nadlanka.com"}>`,
 			to: toEmail,
-			subject: "Verify your email - NaDlanka Marketplace",
+			subject: "Verify your email - NaDlanka",
 			html: `
 				<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
 					<div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
