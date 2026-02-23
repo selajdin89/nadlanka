@@ -20,7 +20,7 @@ const VerifyEmailBanner = () => {
 		const result = await resendVerification();
 		setLoading(false);
 		if (result?.success) setSent(true);
-		else if (result?.error) setError(result.error);
+		else if (result?.error) setError(result.detail ? `${result.error} (${result.detail})` : result.error);
 	};
 
 	return (

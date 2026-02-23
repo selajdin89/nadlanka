@@ -166,6 +166,7 @@ export const AuthProvider = ({ children }) => {
 			return {
 				success: false,
 				error: error.response?.data?.error || "Failed to resend",
+				detail: error.response?.data?.detail,
 			};
 		}
 	};

@@ -727,7 +727,9 @@ app.post("/api/auth/resend-verification", authenticateToken, async (req, res) =>
 				emailErr.code === "EMAIL_NOT_CONFIGURED"
 					? "Verification emails are not configured on this server. Please contact support."
 					: "Could not send verification email. Please try again later or contact support.";
-			return res.status(500).json({ error: message });
+			// Include server error detail so user/support can see the real cause (e.g. Invalid login)
+			const detail = emailErr.message || (emailErr.response ? String(emailErr.response) : "");
+			return res.status(500).json({ error: message, detail: detail.substring(0, 200) });
 		}
 		res.json({ message: "Verification email sent" });
 	} catch (error) {
