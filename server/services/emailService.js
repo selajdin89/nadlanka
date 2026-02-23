@@ -15,7 +15,7 @@ const createTransporter = () => {
 
 	if (isGmail) {
 		// Gmail SMTP configuration
-		return nodemailer.createTransporter({
+		return nodemailer.createTransport({
 			service: "gmail",
 			auth: {
 				user: process.env.EMAIL_USER,
@@ -24,7 +24,7 @@ const createTransporter = () => {
 		});
 	} else if (process.env.EMAIL_HOST) {
 		// Custom SMTP configuration (for other providers)
-		return nodemailer.createTransporter({
+		return nodemailer.createTransport({
 			host: process.env.EMAIL_HOST,
 			port: process.env.EMAIL_PORT || 587,
 			secure: process.env.EMAIL_SECURE === "true", // true for 465, false for other ports
@@ -38,7 +38,7 @@ const createTransporter = () => {
 		console.warn(
 			"⚠️  Using test email service. Configure real email credentials for production."
 		);
-		return nodemailer.createTransporter({
+		return nodemailer.createTransport({
 			host: "smtp.ethereal.email",
 			port: 587,
 			secure: false,

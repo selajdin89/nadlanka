@@ -23,7 +23,7 @@ const testEmail = async () => {
 	let transporter;
 	if (isGmail) {
 		console.log("🔍 Detected Gmail account, using Gmail SMTP...");
-		transporter = nodemailer.createTransporter({
+		transporter = nodemailer.createTransport({
 			service: "gmail",
 			auth: {
 				user: process.env.EMAIL_USER,
@@ -32,7 +32,7 @@ const testEmail = async () => {
 		});
 	} else if (process.env.EMAIL_HOST) {
 		console.log("🔍 Using custom SMTP configuration...");
-		transporter = nodemailer.createTransporter({
+		transporter = nodemailer.createTransport({
 			host: process.env.EMAIL_HOST,
 			port: process.env.EMAIL_PORT || 587,
 			secure: process.env.EMAIL_SECURE === "true",
@@ -43,7 +43,7 @@ const testEmail = async () => {
 		});
 	} else {
 		console.log("🔍 Using default SMTP configuration...");
-		transporter = nodemailer.createTransporter({
+		transporter = nodemailer.createTransport({
 			host: process.env.EMAIL_HOST || "smtp.gmail.com",
 			port: process.env.EMAIL_PORT || 587,
 			secure: false,
