@@ -9,20 +9,24 @@ const VerifyEmailBanner = () => {
 	const { t } = useLanguage();
 	const [loading, setLoading] = useState(false);
 	const [sent, setSent] = useState(false);
+	const [error, setError] = useState("");
 
 	if (!user || user.isVerified) return null;
 
 	const handleResend = async () => {
 		setLoading(true);
 		setSent(false);
+		setError("");
 		const result = await resendVerification();
 		setLoading(false);
 		if (result?.success) setSent(true);
+		else if (result?.error) setError(result.error);
 	};
 
 	return (
 		<div className="verify-email-banner" role="banner">
 			<p className="verify-email-banner__text">{t("auth.verifyEmail.banner")}</p>
+			{error && <p className="verify-email-banner__error">{error}</p>}
 			<div className="verify-email-banner__actions">
 				<button
 					type="button"

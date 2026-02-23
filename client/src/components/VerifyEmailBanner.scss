@@ -15,6 +15,13 @@
 		color: #0c4a6e;
 	}
 
+	&__error {
+		margin: 0.25rem 0 0 0;
+		font-size: 0.85rem;
+		color: #b91c1c;
+		width: 100%;
+	}
+
 	&__actions {
 		display: flex;
 		align-items: center;

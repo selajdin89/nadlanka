@@ -1,5 +1,13 @@
 const nodemailer = require("nodemailer");
 
+// True only when real SMTP is configured (Gmail or custom). Ethereal fallback does not deliver to real inboxes.
+const isEmailConfigured = () => {
+	const isGmail = process.env.EMAIL_USER?.includes("@gmail.com");
+	if (isGmail && process.env.EMAIL_USER && process.env.EMAIL_PASS) return true;
+	if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) return true;
+	return false;
+};
+
 // Email configuration
 const createTransporter = () => {
 	// Check if we're using Gmail or another service
@@ -204,6 +212,13 @@ The seller will receive your message and should reply soon.
 
 // Send email verification link to user
 const sendVerificationEmail = async (toEmail, userName, verificationUrl) => {
+	if (!isEmailConfigured()) {
+		const err = new Error(
+			"Email is not configured. Set EMAIL_USER and EMAIL_PASS (use Gmail App Password for Gmail) in server .env so verification emails can be sent."
+		);
+		err.code = "EMAIL_NOT_CONFIGURED";
+		throw err;
+	}
 	try {
 		const transporter = createTransporter();
 		const mailOptions = {
@@ -243,4 +258,5 @@ module.exports = {
 	sendMessageNotificationEmail,
 	sendMessageConfirmationEmail,
 	sendVerificationEmail,
+	isEmailConfigured,
 };
