@@ -1407,18 +1407,7 @@ app.post("/api/products", authenticateToken, async (req, res) => {
 			});
 		}
 
-		// Always convert location to Cyrillic
-		location = convertLocationToCyrillic(location);
-		
-		// Convert title to Cyrillic if it contains Latin characters
-		if (title && !/[\u0400-\u04FF]/.test(title)) {
-			title = transliterateToCyrillic(title);
-		}
-		
-		// Convert description to Cyrillic if it contains Latin characters
-		if (description && !/[\u0400-\u04FF]/.test(description)) {
-			description = transliterateToCyrillic(description);
-		}
+		// Keep user-entered text as-is (no forced transliteration).
 
 		// Validate subcategory if provided
 		if (subcategory && category !== "Other") {
@@ -1556,26 +1545,12 @@ app.post("/api/products", authenticateToken, async (req, res) => {
 // Update a product
 app.put("/api/products/:id", authenticateToken, async (req, res) => {
 	try {
-		// Always convert to Cyrillic
 		let updateData = { ...req.body };
-		
-		// Convert location to Cyrillic if provided
-		if (updateData.location) {
-			updateData.location = convertLocationToCyrillic(updateData.location);
-			// Clear region if location is not Скопје
-			if (updateData.location !== "Скопје") {
-				updateData.region = undefined;
-			}
-		}
-		
-		// Convert title to Cyrillic if provided and contains Latin characters
-		if (updateData.title && !/[\u0400-\u04FF]/.test(updateData.title)) {
-			updateData.title = transliterateToCyrillic(updateData.title);
-		}
-		
-		// Convert description to Cyrillic if provided and contains Latin characters
-		if (updateData.description && !/[\u0400-\u04FF]/.test(updateData.description)) {
-			updateData.description = transliterateToCyrillic(updateData.description);
+
+		// Keep user-entered text as-is (no forced transliteration).
+		// Preserve existing region-clearing behavior for non-Skopje locations.
+		if (updateData.location && updateData.location !== "Скопје") {
+			updateData.region = undefined;
 		}
 
 		const product = await Product.findByIdAndUpdate(req.params.id, updateData, {
