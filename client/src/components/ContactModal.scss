@@ -123,7 +123,7 @@
 		margin: 0 0 8px 0;
 		font-size: 0.9rem;
 		font-weight: 600;
-		color: #0369a1;
+		color: $accent-active;
 	}
 
 	.product-title {
@@ -137,7 +137,7 @@
 		margin: 0;
 		font-size: 1.1rem;
 		font-weight: 600;
-		color: #059669;
+		color: $nimvelo-sky;
 	}
 }
 
@@ -203,12 +203,12 @@
 		}
 
 		&.email-method {
-			border-color: #10b981;
-			background: #f0fdf4;
+			border-color: $accent-color;
+			background: $accent-subtle;
 
 			&:hover:not(:disabled) {
-				background: #dcfce7;
-				border-color: #059669;
+				background: $accent-light;
+				border-color: $nimvelo-sky;
 			}
 		}
 
@@ -314,7 +314,7 @@
 	padding: 40px 20px;
 
 	.success-icon {
-		color: #059669;
+		color: $nimvelo-sky;
 		margin-bottom: 16px;
 	}
 
@@ -322,12 +322,12 @@
 		margin: 0 0 8px 0;
 		font-size: 1.25rem;
 		font-weight: 600;
-		color: #065f46;
+		color: $nimvelo-slate;
 	}
 
 	p {
 		margin: 0;
-		color: #047857;
+		color: $nimvelo-slate;
 		font-size: 0.9rem;
 	}
 }

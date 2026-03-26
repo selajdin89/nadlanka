@@ -465,7 +465,7 @@ const ProductDetail = () => {
 							</span>
 						</div>
 						<div className="meta-item">
-							<MapPin size={16} />
+							<MapPin size={16} className="location-pin-icon" />
 							<span>
 								<strong>{t("common.location") || "Location"}:</strong>{" "}
 								{product.region
@@ -606,7 +606,7 @@ const ProductDetail = () => {
 									</div>
 									{product.seller?.location && (
 										<div className="seller-location">
-											<MapPin size={16} />
+											<MapPin size={16} className="location-pin-icon" />
 											{product.seller.location}
 										</div>
 									)}
@@ -638,7 +638,7 @@ const ProductDetail = () => {
 									</div>
 									{product.seller?.location && (
 										<div className="seller-location">
-											<MapPin size={16} />
+											<MapPin size={16} className="location-pin-icon" />
 											{product.seller.location}
 										</div>
 									)}

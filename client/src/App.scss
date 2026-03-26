@@ -1,7 +1,9 @@
+@import "./styles/variables.scss";
+
 .app-container {
 	min-height: 100vh;
-	background: #f8f9fa;
-	color: #333;
+	background: transparent;
+	color: $text-dark;
 }
 
 .main-content {

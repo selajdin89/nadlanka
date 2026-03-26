@@ -63,14 +63,14 @@
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
 		&:hover {
-			border-color: #679267;
+			border-color: $accent-color;
 			transform: scale(1.05);
 			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 		}
 
 		&.active {
-			border-color: #679267;
-			box-shadow: 0 4px 12px rgba(103, 146, 103, 0.3);
+			border-color: $accent-color;
+			box-shadow: 0 4px 12px rgba(38, 160, 218, 0.28);
 		}
 
 		.thumbnail-image {
@@ -112,7 +112,7 @@
 	.product-price {
 		font-size: 2.5rem;
 		font-weight: bold;
-		color: #28a745;
+		color: $nimvelo-sky;
 		margin: 0;
 	}
 }
@@ -253,11 +253,16 @@
 			&.call-btn {
 				border: none;
 				color: white;
-				background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+				@include btn-nimvelo-sweep;
+				transition: background-position $btn-gradient-duration ease, box-shadow 0.3s ease;
 
 				&:hover {
-					background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
-					box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+					@include btn-nimvelo-sweep-hover;
+					box-shadow: 0 4px 12px rgba($accent-color, 0.32);
+				}
+
+				&:active {
+					@include btn-nimvelo-sweep-active;
 				}
 			}
 
@@ -317,7 +322,7 @@
 			&:focus {
 				outline: none;
 				border-color: $accent-color;
-				box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+				box-shadow: 0 0 0 3px $accent-ring-focus;
 			}
 
 			&:disabled {
@@ -334,21 +339,26 @@
 		gap: 0.5rem;
 		padding: 0.75rem 1.5rem;
 		width: 100%;
-		background: linear-gradient(135deg, #679267 0%, #557A58 100%) !important;
+		background-color: $nimvelo-slate !important;
+		background-image: $accent-gradient !important;
+		background-size: $btn-gradient-size !important;
+		background-position: left center !important;
+		background-repeat: no-repeat !important;
 		color: white;
 		border: none;
 		border-radius: 8px;
 		font-weight: 500;
 		cursor: pointer;
-		transition: all 0.3s ease;
+		transition: background-position $btn-gradient-duration ease, box-shadow 0.3s ease;
 
 		&:hover:not(:disabled) {
-			background: linear-gradient(135deg, #557A58 0%, #679267 100%) !important;
-			box-shadow: 0 4px 12px rgba(103, 146, 103, 0.3);
+			background-position: right center !important;
+			box-shadow: 0 4px 12px rgba($accent-color, 0.32);
 		}
 
 		&:active:not(:disabled) {
-			background: linear-gradient(135deg, #486A4B 0%, #557A58 100%) !important;
+			background-image: none !important;
+			background-color: $accent-active !important;
 		}
 
 		.spinner-small {
@@ -369,10 +379,10 @@
 	.message-sent-confirmation-left {
 		margin-top: 1rem;
 		padding: 0.75rem;
-		background: rgba(40, 167, 69, 0.1);
-		color: #155724;
+		background: rgba(38, 160, 218, 0.1);
+		color: $nimvelo-slate;
 		border-radius: 8px;
-		border: 1px solid rgba(40, 167, 69, 0.2);
+		border: 1px solid rgba(38, 160, 218, 0.22);
 		font-size: 0.9rem;
 		text-align: center;
 		animation: fadeIn 0.3s ease;
@@ -422,9 +432,9 @@
 	border-left: 4px solid;
 
 	&.active {
-		background: rgba(40, 167, 69, 0.1);
-		border-left-color: #28a745;
-		color: #155724;
+		background: rgba(38, 160, 218, 0.1);
+		border-left-color: $nimvelo-sky;
+		color: $nimvelo-slate;
 	}
 
 	&.inactive {
@@ -464,6 +474,10 @@
 		color: $accent-color;
 		flex-shrink: 0;
 	}
+
+	svg.location-pin-icon {
+		color: $location-pin-color;
+	}
 }
 
 .seller-details {
@@ -476,6 +490,10 @@
 
 		svg {
 			color: $accent-color;
+		}
+
+		svg.location-pin-icon {
+			color: $location-pin-color;
 		}
 	}
 }
@@ -521,18 +539,20 @@
 	}
 
 	.btn-primary {
-		background: linear-gradient(135deg, #679267 0%, #557A58 100%);
+		@include btn-nimvelo-sweep;
 		color: white;
 		border: none;
+		transition: background-position $btn-gradient-duration ease, transform 0.3s ease,
+			box-shadow 0.3s ease;
 
 		&:hover {
-			background: linear-gradient(135deg, #557A58 0%, #679267 100%);
+			@include btn-nimvelo-sweep-hover;
 			transform: translateY(-1px);
-			box-shadow: 0 4px 12px rgba(103, 146, 103, 0.3);
+			box-shadow: 0 4px 12px rgba($accent-color, 0.32);
 		}
 
 		&:active {
-			background: linear-gradient(135deg, #486A4B 0%, #557A58 100%);
+			@include btn-nimvelo-sweep-active;
 			transform: translateY(0);
 		}
 	}
@@ -548,11 +568,11 @@
 	}
 
 	.btn-success {
-		background: #28a745;
+		background: $nimvelo-sky;
 		color: white;
 
 		&:hover {
-			background: #218838;
+			background: $nimvelo-slate;
 			transform: translateY(-1px);
 		}
 	}
@@ -573,7 +593,7 @@
 		border: 2px solid $accent-color;
 
 		&:hover {
-			background: $accent-color;
+			background: $accent-fill-static;
 			color: white;
 		}
 	}
@@ -700,34 +720,34 @@
 		}
 
 		&.call-btn {
-			border-color: #679267;
-			color: #679267;
+			border-color: $accent-color;
+			color: $accent-color;
 			background: white;
 
 			&:hover {
-				background: linear-gradient(135deg, #679267 0%, #557A58 100%);
+				background: $accent-fill-static;
 				color: white;
-				border-color: #679267;
+				border-color: $accent-color;
 			}
 
 			&:active {
-				background: linear-gradient(135deg, #486A4B 0%, #557A58 100%);
+				background: $accent-active;
 			}
 		}
 
 		&.whatsapp-btn {
-			border-color: #679267;
-			color: #679267;
+			border-color: #25d366;
+			color: #128c7e;
 			background: white;
 
 			&:hover {
-				background: linear-gradient(135deg, #679267 0%, #557A58 100%);
+				background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
 				color: white;
-				border-color: #679267;
+				border-color: #25d366;
 			}
 
 			&:active {
-				background: linear-gradient(135deg, #486A4B 0%, #557A58 100%);
+				background: #0d7a6f;
 			}
 		}
 	}
@@ -778,7 +798,7 @@
 			&:focus {
 				outline: none;
 				border-color: $accent-color;
-				box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+				box-shadow: 0 0 0 3px $accent-ring-focus;
 			}
 
 			&:disabled {
@@ -815,10 +835,10 @@
 	.message-sent-confirmation {
 		margin-top: 1rem;
 		padding: 0.75rem;
-		background: rgba(40, 167, 69, 0.1);
-		color: #155724;
+		background: rgba(38, 160, 218, 0.1);
+		color: $nimvelo-slate;
 		border-radius: 8px;
-		border: 1px solid rgba(40, 167, 69, 0.2);
+		border: 1px solid rgba(38, 160, 218, 0.22);
 		font-size: 0.9rem;
 		text-align: center;
 		animation: fadeIn 0.3s ease;

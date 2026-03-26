@@ -129,7 +129,7 @@ const Messages = () => {
 			case "read":
 				return "#3b82f6";
 			case "replied":
-				return "#10b981";
+				return "#26a0da";
 			default:
 				return "#6b7280";
 		}

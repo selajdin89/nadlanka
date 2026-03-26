@@ -15,12 +15,14 @@ import CategoriesSidebar from "../components/CategoriesSidebar";
 import { macedonianCities } from "../utils/macedonianCities";
 import {
 	MapPin,
-	Grid3x3,
+	LayoutGrid,
 	Menu,
-	Smartphone,
-	Car,
-	Home as HomeIcon,
+	MonitorSmartphone,
+	CarFront,
+	Building2,
 } from "lucide-react";
+
+const categoryIconProps = { size: 26, strokeWidth: 1.85 };
 import CustomSelect from "../components/CustomSelect";
 import SearchBar from "../components/SearchBar";
 import logo1 from "../assets/logomk.png";
@@ -304,8 +306,8 @@ const Home = () => {
 								className="category-nav-item"
 								title={t("home.categories.electronics")}
 							>
-								<div className="category-icon">
-									<Smartphone size={24} />
+								<div className="category-icon category-icon--electronics">
+									<MonitorSmartphone {...categoryIconProps} />
 								</div>
 								<span>{t("home.categories.electronics")}</span>
 							</Link>
@@ -314,8 +316,8 @@ const Home = () => {
 								className="category-nav-item"
 								title={t("home.categories.cars")}
 							>
-								<div className="category-icon">
-									<Car size={24} />
+								<div className="category-icon category-icon--vehicles">
+									<CarFront {...categoryIconProps} />
 								</div>
 								<span>{t("home.categories.cars")}</span>
 							</Link>
@@ -324,8 +326,8 @@ const Home = () => {
 								className="category-nav-item"
 								title={t("home.categories.realEstate")}
 							>
-								<div className="category-icon">
-									<HomeIcon size={24} />
+								<div className="category-icon category-icon--realestate">
+									<Building2 {...categoryIconProps} />
 								</div>
 								<span>{t("home.categories.realEstate")}</span>
 							</Link>
@@ -334,8 +336,8 @@ const Home = () => {
 								className="category-nav-item"
 								title={t("home.categories.allCategories") || "All Categories"}
 							>
-								<div className="category-icon">
-									<Grid3x3 size={24} />
+								<div className="category-icon category-icon--all">
+									<LayoutGrid {...categoryIconProps} />
 								</div>
 								<span>
 									{t("home.categories.allCategories") || "Categories"}

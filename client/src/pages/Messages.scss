@@ -337,20 +337,30 @@
 	}
 
 	&.btn-primary {
-		background: #3b82f6;
+		@include btn-nimvelo-sweep;
 		color: white;
+		transition: background-position $btn-gradient-duration ease;
 
 		&:hover:not(:disabled) {
-			background: #2563eb;
+			@include btn-nimvelo-sweep-hover;
+		}
+
+		&:active:not(:disabled) {
+			@include btn-nimvelo-sweep-active;
 		}
 	}
 
 	&.btn-success {
-		background: #10b981;
+		@include btn-nimvelo-sweep;
 		color: white;
+		transition: background-position $btn-gradient-duration ease;
 
 		&:hover:not(:disabled) {
-			background: #059669;
+			@include btn-nimvelo-sweep-hover;
+		}
+
+		&:active:not(:disabled) {
+			@include btn-nimvelo-sweep-active;
 		}
 	}
 

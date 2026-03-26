@@ -1,3 +1,5 @@
+@import "../styles/variables.scss";
+
 .about-container {
 	padding: 2rem;
 	max-width: 1000px;
@@ -105,7 +107,7 @@
 	.step-number {
 		width: 60px;
 		height: 60px;
-		background: #679267;
+		background: $accent-color;
 		color: white;
 		border-radius: 50%;
 		display: flex;

@@ -1,18 +1,50 @@
+@import "./styles/variables.scss";
+
+:root {
+	--primary: #{$nimvelo-sky};
+	--primary-dark: #{$nimvelo-slate};
+}
+
 * {
 	margin: 0;
 	padding: 0;
 	box-sizing: border-box;
 }
 
+html {
+	scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}
+
 body {
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-		"Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-		sans-serif;
+	font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+		Oxygen, Ubuntu, Cantarell, sans-serif;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
-	background: #f8f9fa;
+	text-rendering: optimizeLegibility;
+	background: linear-gradient(
+		165deg,
+		#e8ecf4 0%,
+		$secondary-color 38%,
+		#e4e9f2 100%
+	);
+	background-attachment: fixed;
 	min-height: 100vh;
-	color: #333;
+	color: $text-dark;
+	line-height: 1.55;
+	letter-spacing: -0.011em;
 }
 
 code {
@@ -31,6 +63,7 @@ ul {
 a {
 	color: inherit;
 	text-decoration: none;
+	transition: color $transition-fast, opacity $transition-fast;
 }
 
 // Common Button Styles
@@ -38,50 +71,63 @@ a {
 	display: inline-block;
 	padding: 0.75rem 1.5rem;
 	border: none;
-	border-radius: 6px;
+	border-radius: $border-radius-sm;
 	font-size: 1rem;
-	font-weight: 500;
+	font-weight: 600;
 	text-decoration: none;
 	text-align: center;
 	cursor: pointer;
-	transition: all 0.3s ease;
+	transition: color $transition, border-color $transition, transform $transition-fast,
+		box-shadow $transition, background-position $btn-gradient-duration ease;
 	line-height: 1.5;
+	box-shadow: $shadow-xs;
 
 	&.btn-primary {
-		background: #10b981;
-		color: white;
+		@include btn-nimvelo-sweep;
+		color: $text-light;
 
 		&:hover {
-			background: #059669;
+			@include btn-nimvelo-sweep-hover;
 			transform: translateY(-1px);
+			box-shadow: $shadow-sm;
+		}
+
+		&:active {
+			@include btn-nimvelo-sweep-active;
+			transform: translateY(0);
 		}
 	}
 
 	&.btn-secondary {
-		background: #6c757d;
+		background: $text-muted;
 		color: white;
+		box-shadow: none;
 
 		&:hover {
-			background: #545b62;
+			background: $text-secondary;
 			transform: translateY(-1px);
+			box-shadow: $shadow-xs;
 		}
 	}
 
 	&.btn-outline {
 		background: transparent;
-		color: #10b981;
-		border: 2px solid #10b981;
+		color: $accent-color;
+		border: 1.5px solid $accent-color;
+		box-shadow: none;
 
 		&:hover {
-			background: #10b981;
-			color: white;
+			background: $accent-light;
+			color: $accent-hover;
+			border-color: $accent-hover;
 		}
 	}
 
 	&:disabled {
-		opacity: 0.6;
+		opacity: 0.55;
 		cursor: not-allowed;
 		transform: none !important;
+		box-shadow: none;
 	}
 }
 
@@ -94,25 +140,25 @@ a {
 }
 
 .error-message {
-	background: #f8d7da;
-	color: #721c24;
+	background: #fef2f2;
+	color: #991b1b;
 	padding: 1rem;
-	border-radius: 6px;
-	border: 1px solid #f5c6cb;
+	border-radius: $border-radius-sm;
+	border: 1px solid #fecaca;
 	margin-bottom: 1rem;
+	transition: opacity $transition-fast;
 }
 
 .success-message {
-	background: #d4edda;
-	color: #155724;
+	background: $accent-subtle;
+	color: $accent-active;
 	padding: 1rem;
-	border-radius: 6px;
-	border: 1px solid #c3e6cb;
+	border-radius: $border-radius-sm;
+	border: 1px solid rgba($accent-color, 0.22);
 	margin-bottom: 1rem;
 }
 
 @import "./styles/shared.scss";
-@import "./styles/variables.scss";
 @import "./App.scss";
 @import "./components/Header.scss";
 @import "./components/LanguageSwitcher.scss";

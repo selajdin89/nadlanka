@@ -1,3 +1,5 @@
+@import "../styles/variables";
+
 .verify-email-banner {
 	background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
 	border-bottom: 1px solid #bae6fd;
@@ -30,12 +32,19 @@
 
 	&__resend {
 		padding: 0.35rem 0.75rem;
-		background: #0369a1;
+		@include btn-nimvelo-sweep;
 		color: #fff;
 		border: none;
 		border-radius: 6px;
 		font-size: 0.85rem;
 		cursor: pointer;
+		transition: background-position $btn-gradient-duration ease;
+		&:hover:not(:disabled) {
+			@include btn-nimvelo-sweep-hover;
+		}
+		&:active:not(:disabled) {
+			@include btn-nimvelo-sweep-active;
+		}
 		&:disabled {
 			opacity: 0.8;
 			cursor: default;
@@ -43,7 +52,7 @@
 	}
 
 	&__link {
-		color: #0369a1;
+		color: $accent-hover;
 		font-size: 0.85rem;
 		font-weight: 500;
 		text-decoration: none;

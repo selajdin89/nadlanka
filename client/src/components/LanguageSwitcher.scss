@@ -21,7 +21,7 @@
 	height: 36px;
 
 	&:hover {
-		background: rgba(16, 185, 129, 0.08);
+		background: $accent-surface-highlight;
 		color: $accent-color;
 		transform: scale(1.05);
 	}
@@ -100,7 +100,7 @@
 	}
 
 	&.active {
-		background: #f0fdf4;
+		background: $accent-subtle;
 		color: $accent-color;
 		font-weight: 700;
 	}

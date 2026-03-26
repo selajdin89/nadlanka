@@ -126,14 +126,14 @@
 	text-align: left;
 
 	&:hover {
-		border-color: #679267;
+		border-color: $accent-color;
 		background: linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%);
-		color: #679267;
+		color: $accent-color;
 		transform: translateY(-2px);
 		box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15);
 
 		.category-item-icon {
-			color: #679267;
+			color: $accent-color;
 		}
 
 		.category-arrow {

@@ -1,7 +1,7 @@
 @import "../styles/variables";
 
 .ai-generator {
-	background: linear-gradient(135deg, #f0fdfa 0%, #e0f2f1 100%);
+	background: linear-gradient(135deg, $accent-subtle 0%, $accent-light 100%);
 	border: 2px dashed $accent-color;
 	border-radius: 12px;
 	padding: 1.5rem;
@@ -10,7 +10,7 @@
 
 	&:hover {
 		border-color: $accent-highlight;
-		background: linear-gradient(135deg, #e0f2f1 0%, #d1fae5 100%);
+		background: linear-gradient(135deg, $accent-light 0%, #c5e8f7 100%);
 	}
 
 	.ai-generator-header {
@@ -45,18 +45,24 @@
 		gap: 0.5rem;
 		width: 100%;
 		padding: 0.75rem 1.5rem;
-		background: linear-gradient(135deg, $accent-color, $accent-highlight);
+		@include btn-nimvelo-sweep;
 		color: white;
 		border: none;
 		border-radius: 8px;
 		font-size: 1rem;
 		font-weight: 600;
 		cursor: pointer;
-		transition: all 0.3s ease;
+		transition: background-position $btn-gradient-duration ease, transform 0.3s ease,
+			box-shadow 0.3s ease;
 
 		&:hover:not(:disabled) {
+			@include btn-nimvelo-sweep-hover;
 			transform: translateY(-2px);
-			box-shadow: 0 4px 12px rgba($accent-color, 0.3);
+			box-shadow: 0 4px 12px rgba($accent-color, 0.32);
+		}
+
+		&:active:not(:disabled) {
+			@include btn-nimvelo-sweep-active;
 		}
 
 		&:disabled {

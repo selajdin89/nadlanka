@@ -190,7 +190,7 @@
 
 				&:hover {
 					background: $accent-highlight;
-					box-shadow: 0 2px 4px rgba(103, 146, 103, 0.2);
+					box-shadow: 0 2px 4px rgba(38, 160, 218, 0.2);
 				}
 			}
 		}
@@ -248,7 +248,7 @@
 				left: 0;
 				width: 30%;
 				height: 3px;
-				background: linear-gradient(90deg, $accent-color, $accent-highlight);
+				background: $accent-gradient;
 				border-radius: 2px;
 			}
 		}
@@ -266,8 +266,8 @@
 				transition: all 0.3s ease;
 				font-size: 0.95rem;
 				font-weight: 500;
-				background: rgba(103, 146, 103, 0.05);
-				border: 1px solid rgba(103, 146, 103, 0.1);
+				background: rgba(38, 160, 218, 0.05);
+				border: 1px solid rgba(38, 160, 218, 0.1);
 				position: relative;
 				overflow: hidden;
 
@@ -288,10 +288,10 @@
 				}
 
 				&:hover {
-					background: linear-gradient(135deg, $accent-color, $accent-highlight);
+					background: $accent-fill-static;
 					color: $text-light;
 					transform: translateX(8px) translateY(-2px);
-					box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+					box-shadow: 0 4px 15px rgba($accent-color, 0.3);
 					border-color: $accent-color;
 
 					&::before {
@@ -307,7 +307,7 @@
 			gap: 0.75rem;
 
 			.search-link {
-				background: rgba(103, 146, 103, 0.08);
+				background: rgba(38, 160, 218, 0.08);
 				color: $text-dark;
 				text-decoration: none;
 				padding: 0.6rem 1rem;
@@ -315,7 +315,7 @@
 				font-size: 0.85rem;
 				font-weight: 500;
 				transition: all 0.3s ease;
-				border: 1px solid rgba(103, 146, 103, 0.15);
+				border: 1px solid rgba(38, 160, 218, 0.15);
 				position: relative;
 				overflow: hidden;
 
@@ -337,10 +337,10 @@
 				}
 
 				&:hover {
-					background: linear-gradient(135deg, $accent-color, $accent-highlight);
+					background: $accent-fill-static;
 					color: $text-light;
 					transform: translateY(-3px) scale(1.05);
-					box-shadow: 0 6px 20px rgba(103, 146, 103, 0.4);
+					box-shadow: 0 6px 20px rgba($accent-color, 0.35);
 					border-color: $accent-color;
 
 					&::before {
@@ -354,14 +354,14 @@
 		.filter-group {
 			margin-bottom: 2rem;
 			padding: 1.25rem;
-			background: rgba(103, 146, 103, 0.03);
+			background: rgba(38, 160, 218, 0.03);
 			border-radius: 12px;
-			border: 1px solid rgba(103, 146, 103, 0.08);
+			border: 1px solid rgba(38, 160, 218, 0.08);
 			transition: all 0.3s ease;
 
 			&:hover {
-				background: rgba(103, 146, 103, 0.06);
-				border-color: rgba(103, 146, 103, 0.15);
+				background: rgba(38, 160, 218, 0.06);
+				border-color: rgba(38, 160, 218, 0.15);
 				transform: translateY(-1px);
 			}
 
@@ -393,7 +393,7 @@
 			input {
 				width: 100%;
 				padding: 0.875rem 1rem;
-				border: 2px solid rgba(103, 146, 103, 0.15);
+				border: 2px solid rgba(38, 160, 218, 0.15);
 				border-radius: 10px;
 				font-size: 0.9rem;
 				font-weight: 500;
@@ -409,13 +409,13 @@
 				&:focus {
 					outline: none;
 					border-color: $accent-color;
-					box-shadow: 0 0 0 4px rgba(103, 146, 103, 0.15);
+					box-shadow: 0 0 0 4px rgba(38, 160, 218, 0.15);
 					background: rgba(255, 255, 255, 0.95);
 					transform: translateY(-1px);
 				}
 
 				&:hover {
-					border-color: rgba(103, 146, 103, 0.25);
+					border-color: rgba(38, 160, 218, 0.25);
 					background: rgba(255, 255, 255, 0.9);
 				}
 			}
@@ -518,7 +518,7 @@
 		background: rgba(255, 255, 255, 0.8);
 		border-radius: 12px;
 		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-		border: 1px solid rgba(103, 146, 103, 0.1);
+		border: 1px solid rgba(38, 160, 218, 0.1);
 
 		.empty-icon {
 			margin-bottom: 1.5rem;
@@ -623,7 +623,7 @@
 }
 
 .category-cta {
-	background: linear-gradient(135deg, $secondary-color 0%, $accent-color 100%);
+	background: linear-gradient(135deg, $accent-subtle 0%, $accent-light 55%, $secondary-color 100%);
 	padding: 3rem 2rem;
 	margin: 3rem 2rem 0;
 	border-radius: 12px;
@@ -647,20 +647,25 @@
 		}
 
 		.cta-btn {
-			background: $accent-color;
+			@include btn-nimvelo-sweep;
 			color: $text-light;
 			padding: 1rem 2rem;
 			border-radius: 8px;
 			text-decoration: none;
 			font-weight: 600;
 			font-size: 1.1rem;
-			transition: all 0.3s ease;
+			transition: background-position $btn-gradient-duration ease, transform 0.3s ease,
+				box-shadow 0.3s ease;
 			display: inline-block;
 
 			&:hover {
-				background: $accent-highlight;
+				@include btn-nimvelo-sweep-hover;
 				transform: translateY(-2px);
 				box-shadow: $shadow-md;
+			}
+
+			&:active {
+				@include btn-nimvelo-sweep-active;
 			}
 		}
 	}

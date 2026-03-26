@@ -1,3 +1,5 @@
+@import "../styles/variables";
+
 .favorites-container {
 	max-width: 1400px;
 	margin: 0 auto;
@@ -84,18 +86,23 @@
 				align-items: center;
 				gap: 0.5rem;
 				padding: 0.875rem 2rem;
-				background: #3b82f6;
+				@include btn-nimvelo-sweep;
 				color: white;
 				text-decoration: none;
 				border-radius: 8px;
 				font-weight: 500;
 				font-size: 1rem;
-				transition: all 0.2s ease;
+				transition: background-position $btn-gradient-duration ease, transform 0.2s ease,
+					box-shadow 0.2s ease;
 
 				&:hover {
-					background: #2563eb;
+					@include btn-nimvelo-sweep-hover;
 					transform: translateY(-2px);
-					box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+					box-shadow: 0 4px 12px rgba($accent-color, 0.32);
+				}
+
+				&:active {
+					@include btn-nimvelo-sweep-active;
 				}
 			}
 		}

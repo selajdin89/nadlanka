@@ -1,3 +1,5 @@
+@import "../styles/variables.scss";
+
 .custom-select {
 	position: relative;
 	width: 100%;
@@ -41,8 +43,8 @@
 	&:focus,
 	&:focus-within {
 		outline: none;
-		border-color: #679267;
-		box-shadow: 0 0 0 3px rgba(103, 146, 103, 0.1);
+		border-color: $accent-color;
+		box-shadow: 0 0 0 3px $accent-ring-focus;
 		background-color: #ffffff;
 	}
 }
@@ -71,7 +73,7 @@
 }
 
 .custom-select-trigger:hover .custom-select-arrow {
-	color: #679267;
+	color: $accent-color;
 }
 
 .custom-select-dropdown {
@@ -109,9 +111,9 @@
 
 		&:focus {
 			outline: none;
-			border-color: #679267;
+			border-color: $accent-color;
 			background-color: white;
-			box-shadow: 0 0 0 3px rgba(103, 146, 103, 0.1);
+			box-shadow: 0 0 0 3px $accent-ring-focus;
 		}
 
 		&::placeholder {
@@ -173,7 +175,7 @@
 	}
 
 	.custom-select-option-arrow {
-		color: #679267;
+		color: $accent-color;
 		flex-shrink: 0;
 		transition: transform 0.15s ease;
 	}
@@ -194,22 +196,40 @@
 	}
 
 	&:hover {
-		background-color: #d1fae5 !important;
-		color: #065f46 !important;
+		background: linear-gradient(
+			90deg,
+			rgba($nimvelo-slate, 0.06) 0%,
+			rgba($nimvelo-sky, 0.16) 100%
+		) !important;
+		color: $accent-option-hover-text !important;
+
+		.custom-select-option-arrow {
+			color: $nimvelo-sky !important;
+		}
 	}
 
 	&.selected {
-		background-color: #679267;
+		background-color: $accent-color;
 		color: white;
 		font-weight: 500;
 
 		&:hover {
-			background-color: #557a58 !important;
+			background-color: $accent-hover !important;
+			background-image: none !important;
+			color: #fff !important;
+
+			.custom-select-option-arrow {
+				color: rgba(255, 255, 255, 0.92) !important;
+			}
 		}
 
 		&:active {
-			background-color: #486a4b !important;
+			background-color: $accent-active !important;
 			color: white !important;
+
+			.custom-select-option-arrow {
+				color: rgba(255, 255, 255, 0.92) !important;
+			}
 		}
 	}
 
@@ -266,8 +286,8 @@
 // Open state
 .custom-select.open {
 	.custom-select-trigger {
-		border-color: #679267;
-		box-shadow: 0 0 0 3px rgba(103, 146, 103, 0.1);
+		border-color: $accent-color;
+		box-shadow: 0 0 0 3px $accent-ring-focus;
 	}
 }
 

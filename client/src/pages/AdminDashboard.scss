@@ -1,3 +1,5 @@
+@import "../styles/variables.scss";
+
 .admin-dashboard {
 	max-width: 1400px;
 	margin: 0 auto;
@@ -46,8 +48,8 @@
 			}
 
 			&.active {
-				color: #10b981;
-				border-bottom-color: #10b981;
+				color: $accent-color;
+				border-bottom-color: $accent-color;
 			}
 		}
 	}
@@ -133,7 +135,7 @@
 
 				.stat-change {
 					font-size: 0.75rem;
-					color: #10b981;
+					color: $accent-color;
 					font-weight: 500;
 				}
 			}
@@ -173,8 +175,8 @@
 
 				.category-count {
 					font-weight: 700;
-					color: #10b981;
-					background: #d1fae5;
+					color: $nimvelo-slate;
+					background: $accent-light;
 					padding: 0.25rem 0.75rem;
 					border-radius: 12px;
 					font-size: 0.875rem;
@@ -219,7 +221,7 @@
 			outline: none;
 
 			&:focus {
-				border-color: #10b981;
+				border-color: $accent-color;
 			}
 		}
 	}
@@ -290,7 +292,7 @@
 							outline: none;
 
 							&:focus {
-								border-color: #10b981;
+								border-color: $accent-color;
 							}
 						}
 					}
@@ -309,8 +311,8 @@
 		font-weight: 500;
 
 		&.status-green {
-			background: #d1fae5;
-			color: #065f46;
+			background: $accent-light;
+			color: $nimvelo-slate;
 		}
 
 		&.status-yellow {
@@ -353,11 +355,11 @@
 			}
 
 			&.btn-approve {
-				background: #d1fae5;
-				color: #065f46;
+				background: $accent-light;
+				color: $nimvelo-slate;
 
 				&:hover {
-					background: #a7f3d0;
+					background: #bae6fd;
 				}
 			}
 
@@ -400,7 +402,7 @@
 
 			&:hover:not(:disabled) {
 				background: #f9fafb;
-				border-color: #10b981;
+				border-color: $accent-color;
 			}
 
 			&:disabled {

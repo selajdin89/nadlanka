@@ -5,19 +5,26 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+	background: linear-gradient(
+		160deg,
+		$secondary-color 0%,
+		$accent-subtle 45%,
+		#eef1f5 100%
+	);
 	padding: 1rem 0.5rem;
 }
 
 .auth-card {
-	background: rgba(255, 255, 255, 0.95);
-	backdrop-filter: blur(10px);
-	border-radius: $border-radius;
-	box-shadow: $shadow-hover;
-	border: 1px solid rgba(255, 255, 255, 0.2);
+	background: rgba(255, 255, 255, 0.92);
+	backdrop-filter: blur(14px) saturate(1.1);
+	-webkit-backdrop-filter: blur(14px) saturate(1.1);
+	border-radius: $border-radius-lg;
+	box-shadow: $shadow;
+	border: 1px solid rgba($accent-color, 0.1);
 	padding: 1.5rem;
 	width: 100%;
 	max-width: 500px;
+	transition: box-shadow $transition, transform $transition-fast;
 }
 
 .auth-header {
@@ -62,7 +69,7 @@
 			&:focus {
 				outline: none;
 				border-color: $accent-color;
-				box-shadow: 0 0 0 3px rgba(103, 146, 103, 0.1);
+				box-shadow: 0 0 0 3px $accent-ring-focus;
 				background: rgba(255, 255, 255, 1);
 			}
 
@@ -85,23 +92,31 @@
 	.auth-button {
 		width: 100%;
 		padding: 0.7rem 1.2rem;
-		background: linear-gradient(135deg, $accent-color 0%, #557A58 100%);
+		@include btn-nimvelo-sweep;
 		color: white;
 		border: none;
 		border-radius: $border-radius;
 		font-size: 0.95rem;
 		font-weight: 600;
 		cursor: pointer;
-		transition: $transition;
+		transition: background-position $btn-gradient-duration ease, transform $transition-fast,
+			box-shadow $transition;
+		box-shadow: 0 2px 10px rgba($accent-color, 0.35);
 
 		&:hover:not(:disabled) {
+			@include btn-nimvelo-sweep-hover;
 			transform: translateY(-2px);
-			box-shadow: $shadow-hover;
+			box-shadow: 0 8px 24px rgba($accent-color, 0.38);
+		}
+
+		&:active:not(:disabled) {
+			@include btn-nimvelo-sweep-active;
 		}
 
 		&:disabled {
 			opacity: 0.7;
 			cursor: not-allowed;
+			box-shadow: none;
 		}
 	}
 }

@@ -1,31 +1,91 @@
-// Color Variables - Clean White Theme with Green Accent
+// Design tokens — clean, modern, smooth
+// Primary CTA: "Nimvelo" from https://gradientbuttons.colorion.co/ (sweep on hover)
+
+$nimvelo-slate: #314755;
+$nimvelo-sky: #26a0da;
+
 $primary-color: #ffffff;
-$secondary-color: #f8f9fa;
-$accent-color: #679267; // Primary green
-$accent-hover: #557A58; // Hover state
-$accent-active: #486A4B; // Active/Pressed state
-$accent-highlight: #557A58; // Hover (alias for compatibility)
-$accent-light: #E8F0EA; // Light background
-$accent-subtle: #F2F7F3; // Subtle background
+$secondary-color: #eef1f7;
+$accent-color: $nimvelo-sky;
+$accent-hover: $nimvelo-slate;
+$accent-active: #283e4f;
+$accent-highlight: #4eb8e8;
+$accent-light: #d6eef9;
+$accent-subtle: #e8f1f6;
+
+// Full Nimvelo strip (use with background-size: 200% + position left → right on hover)
+$accent-gradient: linear-gradient(
+	90deg,
+	$nimvelo-slate 0%,
+	$nimvelo-sky 51%,
+	$nimvelo-slate 100%
+);
+$btn-gradient-size: 200% auto;
+$btn-gradient-duration: 0.5s;
+
+// Same palette, compact diagonal (small chips, outline→fill hovers without sweep)
+$accent-fill-static: linear-gradient(135deg, $nimvelo-slate 0%, $nimvelo-sky 100%);
+
+@mixin btn-nimvelo-sweep {
+	background-color: $nimvelo-slate;
+	background-image: $accent-gradient;
+	background-size: $btn-gradient-size;
+	background-position: left center;
+	background-repeat: no-repeat;
+}
+
+@mixin btn-nimvelo-sweep-hover {
+	background-position: right center;
+}
+
+@mixin btn-nimvelo-sweep-active {
+	background-image: none;
+	background-color: $accent-active;
+}
+
+// List / dropdown hover & focus rings (replaces legacy mint green)
+$accent-option-hover-bg: #d6eef9;
+$accent-option-hover-text: $nimvelo-slate;
+$accent-ring-focus: rgba($nimvelo-sky, 0.12);
+$accent-ring-focus-strong: rgba($nimvelo-sky, 0.2);
+$accent-surface-highlight: rgba($nimvelo-sky, 0.08);
+
+// Location pin — warm accent (icon stroke only; no filled badge)
+$location-pin-color: #f97316;
+
 $text-light: #ffffff;
-$text-dark: #111827; // Primary text
-$text-secondary: #4B5563; // Secondary text
-$text-muted: #6B7280; // Muted text
+$text-dark: #0f172a;
+$text-secondary: #475569;
+$text-muted: #64748b;
 
-// Background Variables
-$bg-overlay: rgba(0, 0, 0, 0.1);
-$bg-overlay-hover: rgba(0, 0, 0, 0.15);
-$bg-glass: rgba(255, 255, 255, 0.8);
+$bg-overlay: rgba(15, 23, 42, 0.06);
+$bg-overlay-hover: rgba(15, 23, 42, 0.1);
+$bg-glass: rgba(255, 255, 255, 0.72);
 
-// Border and Layout Variables
-$border-color: #e9ecef;
-$border-radius: 12px;
-$transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+$border-color: #e2e8f0;
+$border-radius: 14px;
+$border-radius-sm: 10px;
+$border-radius-lg: 18px;
 
-// Shadow Variables
-$shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-$shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.15);
-$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
-$shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-$shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-$shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+// Smooth motion (ease-out, not bouncy)
+$ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+$ease-out-soft: cubic-bezier(0.33, 1, 0.68, 1);
+$transition-fast: 0.18s $ease-smooth;
+$transition: 0.28s $ease-smooth;
+$transition-slow: 0.45s $ease-smooth;
+
+// Layered, soft shadows (less harsh than flat gray)
+$shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+$shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+$shadow: 0 4px 24px rgba(15, 23, 42, 0.07), 0 2px 8px rgba(15, 23, 42, 0.04);
+$shadow-hover: 0 12px 40px rgba(15, 23, 42, 0.1), 0 4px 12px rgba(15, 23, 42, 0.05);
+$shadow-md: 0 6px 16px rgba(15, 23, 42, 0.08);
+$shadow-lg: 0 16px 48px rgba(15, 23, 42, 0.1);
+$shadow-xl: 0 24px 64px rgba(15, 23, 42, 0.12);
+
+// Cool contrast CTAs (search, sign up) — deeper blue vs bright sky accent
+$cta-slate: #2c5282;
+$cta-slate-mid: #2b6cb0;
+$cta-slate-hover: #2a4a7c;
+$cta-slate-active: #234468;
+$cta-slate-glow: rgba(44, 82, 130, 0.35);

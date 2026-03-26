@@ -37,7 +37,7 @@
 	display: inline-block;
 	margin: 0.5rem;
 	padding: 0.6rem 1.2rem;
-	background: var(--primary, #166534);
+	background: var(--primary, #26a0da);
 	color: #fff;
 	border-radius: 8px;
 	text-decoration: none;
@@ -47,8 +47,8 @@
 	}
 	&.secondary {
 		background: transparent;
-		color: var(--primary, #166534);
-		border: 1px solid var(--primary, #166534);
+		color: var(--primary, #26a0da);
+		border: 1px solid var(--primary, #26a0da);
 	}
 }
 
@@ -646,7 +646,7 @@ textarea.error {
 
 	&.checked {
 		border-color: $accent-color;
-		background-color: #d1fae5;
+		background-color: $accent-light;
 
 		input[type="checkbox"] {
 			border-color: $accent-color;
@@ -707,13 +707,13 @@ input[type="file"] {
 
 	&:hover {
 		border-color: $accent-color;
-		background-color: #f0fdf4;
+		background-color: $accent-subtle;
 	}
 
 	&:focus {
 		outline: none;
 		border-color: $accent-color;
-		box-shadow: 0 0 0 3px rgba($accent-color, 0.1);
+		box-shadow: 0 0 0 3px $accent-ring-focus;
 	}
 }
 
@@ -789,14 +789,14 @@ input[type="file"] {
 }
 
 .success-message {
-	background: linear-gradient(to right, #f0fdf4, #dcfce7);
-	color: #166534;
+	background: linear-gradient(to right, $accent-subtle, $accent-light);
+	color: $nimvelo-slate;
 	padding: 1rem 1.25rem;
 	border-radius: 12px;
 	margin-bottom: 1.5rem;
-	border-left: 4px solid #22c55e;
+	border-left: 4px solid $nimvelo-sky;
 	font-weight: 500;
-	box-shadow: 0 2px 4px rgba(34, 197, 94, 0.1);
+	box-shadow: 0 2px 4px rgba(38, 160, 218, 0.12);
 	animation: slideIn 0.3s ease;
 }
 
@@ -824,16 +824,20 @@ input[type="file"] {
 		min-width: 120px;
 
 		&.btn-primary {
-			background: linear-gradient(135deg, $accent-color, $accent-highlight);
+			@include btn-nimvelo-sweep;
 			color: white;
-			box-shadow: 0 2px 4px rgba($accent-color, 0.2);
+			box-shadow: 0 2px 4px rgba($accent-color, 0.25);
+			transition: background-position $btn-gradient-duration ease, transform 0.2s ease,
+				box-shadow 0.2s ease;
 
 			&:hover:not(:disabled) {
+				@include btn-nimvelo-sweep-hover;
 				transform: translateY(-2px);
 				box-shadow: 0 4px 12px rgba($accent-color, 0.35);
 			}
 
 			&:active:not(:disabled) {
+				@include btn-nimvelo-sweep-active;
 				transform: translateY(0);
 				box-shadow: 0 2px 4px rgba($accent-color, 0.2);
 			}
@@ -852,7 +856,7 @@ input[type="file"] {
 			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
 			&:hover {
-				background: #f0fdf4;
+				background: $accent-subtle;
 				border-color: $accent-highlight;
 				transform: translateY(-1px);
 				box-shadow: 0 2px 4px rgba($accent-color, 0.15);
